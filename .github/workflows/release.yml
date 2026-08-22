@@ -1,0 +1,80 @@
+name: Production release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Verify signed annotated release tag
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const tagName = context.ref.replace("refs/tags/", "");
+            if (!/^v\d+\.\d+\.\d+$/.test(tagName)) {
+              core.setFailed("Production tags must use the vX.Y.Z format.");
+              return;
+            }
+            const ref = await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `tags/${tagName}`,
+            });
+            if (ref.data.object.type !== "tag") {
+              core.setFailed("Production releases require a signed annotated tag.");
+              return;
+            }
+            const tag = await github.rest.git.getTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_sha: ref.data.object.sha,
+            });
+            if (!tag.data.verification?.verified) {
+              core.setFailed(`Tag signature is not verified: ${tag.data.verification?.reason}`);
+            }
+      - name: Verify release commit is on the protected branch
+        run: |
+          git fetch origin master main --no-tags || true
+          git merge-base --is-ancestor "$GITHUB_SHA" "origin/${{ github.event.repository.default_branch }}"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Apply pending Supabase migrations
+        run: |
+          npx supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+          npx supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+      - name: Build exact release commit
+        run: |
+          npx --yes vercel@59.4.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@59.4.0 build --prod --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy production
+        run: npx --yes vercel@59.4.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

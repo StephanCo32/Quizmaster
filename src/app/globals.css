@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+:root {
+	--ink: #171713;
+	--paper: #f4f1e8;
+	--signal: #ff4f2f;
+	--acid: #d7f43b;
+	--line: rgba(23, 23, 19, 0.22);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html {
+	background: var(--paper);
+}
+
+body {
+	margin: 0;
+	color: var(--ink);
+	background:
+		linear-gradient(var(--line) 1px, transparent 1px),
+		linear-gradient(90deg, var(--line) 1px, transparent 1px),
+		var(--paper);
+	background-size: 44px 44px;
+	font-family: Georgia, "Times New Roman", serif;
+	letter-spacing: 0;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.brand-lockup {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.75rem;
+	font-family: "Courier New", monospace;
+	font-size: 0.78rem;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.brand-mark {
+	display: grid;
+	width: 2.25rem;
+	height: 2.25rem;
+	place-items: center;
+	color: var(--paper);
+	background: var(--ink);
+}
+
+.landing-shell,
+.role-shell {
+	min-height: 100svh;
+	padding: clamp(1.25rem, 3vw, 2.75rem);
+}
+
+.landing-shell {
+	display: grid;
+	grid-template-rows: auto 1fr auto;
+	gap: 3rem;
+}
+
+.landing-copy {
+	align-self: center;
+	max-width: 68rem;
+}
+
+.eyebrow,
+.view-code,
+.role-footer,
+.status-panel p {
+	margin: 0;
+	font-family: "Courier New", monospace;
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+h1 {
+	max-width: 12ch;
+	margin: 0.2em 0;
+	font-size: clamp(3.5rem, 11vw, 9rem);
+	font-weight: 400;
+	line-height: 0.88;
+	letter-spacing: 0;
+}
+
+.lede {
+	max-width: 42rem;
+	margin: 1.5rem 0 0;
+	font-size: clamp(1.1rem, 2vw, 1.5rem);
+	line-height: 1.45;
+}
+
+.role-links {
+	display: grid;
+	border-top: 2px solid var(--ink);
+}
+
+.role-links a {
+	display: grid;
+	grid-template-columns: 3rem 1fr;
+	gap: 1rem;
+	padding: 1.1rem 0;
+	border-bottom: 1px solid var(--ink);
+	font-family: "Courier New", monospace;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.role-links a:hover,
+.role-links a:focus-visible {
+	padding-left: 0.75rem;
+	color: var(--paper);
+	background: var(--ink);
+	outline: none;
+}
+
+.role-shell {
+	display: grid;
+	grid-template-rows: auto 1fr auto;
+}
+
+.role-header,
+.role-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding-bottom: 1.25rem;
+	border-bottom: 2px solid var(--ink);
+}
+
+.role-content {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(15rem, 24rem);
+	gap: clamp(3rem, 8vw, 8rem);
+	align-items: center;
+	padding: 4rem 0;
+}
+
+.status-panel {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 1rem;
+	align-items: center;
+	padding: 1.5rem 0;
+	border-block: 1px solid var(--ink);
+}
+
+.status-panel strong {
+	display: block;
+	margin-top: 0.35rem;
+	font-size: 1.2rem;
+	font-weight: 400;
+}
+
+.status-dot {
+	width: 1rem;
+	height: 1rem;
+	background: var(--signal);
+	border-radius: 50%;
+	box-shadow: 0 0 0 0.35rem rgba(255, 79, 47, 0.18);
+}
+
+.role-footer {
+	padding: 1.25rem 0 0;
+	border-top: 2px solid var(--ink);
+	border-bottom: 0;
+}
+
+@media (max-width: 700px) {
+	body {
+		background-size: 28px 28px;
+	}
+
+	.landing-shell,
+	.role-shell {
+		padding: 1rem;
+	}
+
+	.role-content {
+		grid-template-columns: 1fr;
+		align-content: center;
+		gap: 2.5rem;
+		padding: 3rem 0;
+	}
+
+	.role-footer {
+		align-items: flex-end;
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.role-links a {
+		transition: padding 160ms ease, color 160ms ease, background 160ms ease;
+	}
+}
