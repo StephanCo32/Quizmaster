@@ -36,6 +36,18 @@ CI runs the same checks and validates all migrations against local Supabase.
 
 ## Production release
 
+For first-time provisioning, run the interactive wizard from a clean `main`
+checkout using Git Bash:
+
+```bash
+./scripts/setup-production.sh
+```
+
+It creates or links the Supabase and Vercel projects, configures the protected
+GitHub `production` Environment, starts the first signed release, and guides
+uptime-monitor setup. Secret prompts are hidden; values are sent directly to
+Vercel and GitHub and are not written to a local environment file.
+
 Production is deployed only from a verified signed semantic-version tag on the
 protected default branch:
 
