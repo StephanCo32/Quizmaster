@@ -110,6 +110,7 @@ export function HostDashboard({
                         <div><dt>Data authority</dt><dd>Server</dd></div>
                         <div><dt>Region</dt><dd>FRA1</dd></div>
                     </dl>
+                    <Link className="rail-link" href="/host/templates">Picture-caption templates</Link>
                     <div className={`connection-card connection-${connectionState}`}>
                         <span className="connection-light" aria-hidden="true" />
                         <div>
