@@ -26,7 +26,7 @@ describe("GET /api/health", () => {
         });
         expect(fetchMock).toHaveBeenCalledOnce();
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
-            "https://project.supabase.co/rest/v1/",
+            "https://project.supabase.co/auth/v1/health",
         );
     });
 
