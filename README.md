@@ -6,8 +6,37 @@ connectivity through a public health endpoint.
 
 ## Local development
 
-Requirements: Node.js 24, npm, Docker, and the Supabase CLI installed through
-the project dependencies.
+Requirements: Node.js 24 and npm. Docker is required only for the isolated
+local Supabase option used by CI.
+
+### Hosted development without Docker
+
+Create a separate, expendable Supabase Development project and configure this
+checkout from Git Bash:
+
+```bash
+./scripts/setup-development.sh
+```
+
+The wizard configures localhost Auth redirects, writes Development-only API
+values to ignored `.env.local`, links the project, previews and applies pending
+migrations, runs transactional pgTAP through the Supabase Management API, and
+verifies `/api/health`. It does not require Docker and never writes the database
+password to disk. Never select or link the Production project in this workflow.
+
+After setup, use the normal application command:
+
+```bash
+npm run dev
+```
+
+Run the remote database contract independently with:
+
+```bash
+npm run test:db:linked
+```
+
+### Isolated local development with Docker
 
 ```bash
 npm install
