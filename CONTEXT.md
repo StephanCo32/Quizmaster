@@ -8,6 +8,10 @@ Quizmaster runs synchronous, in-room party games through distinct host, player, 
 An authenticated organizer who creates and controls a game session.
 _Avoid_: Admin, game master
 
+**Content administrator**:
+An authenticated curator who manages the global Round template catalog and may grant or revoke the same capability for other authenticated people. A Content administrator may also act as a Host.
+_Avoid_: Admin, curator Host
+
 **Player**:
 An anonymous participant in a Game session through a Party membership. A Player retains the Party membership's nickname and color in every successor Game session.
 _Avoid_: User, guest
@@ -61,6 +65,10 @@ _Avoid_: Mode, phase
 **Game type**:
 A reusable set of rules and views used to configure and play game rounds.
 _Avoid_: Game mode, mini-game
+
+**Round template**:
+A globally available reusable configuration for one Game type, managed outside Parties and Game sessions by Content administrators and selected by Hosts to prepare Game rounds.
+_Avoid_: Prepared Game round, preset
 
 **Picture-caption round**:
 A Game round in which eligible Players submit captions for one picture, vote for an anonymous Caption candidate, watch Ballots be revealed, and then see authors and results. Its internal phases are Captioning, Voting, Reveal, and Results.
