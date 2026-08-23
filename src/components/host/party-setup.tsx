@@ -1,8 +1,10 @@
+import { OpenLobbyButton } from "@/components/host/open-lobby-button";
 import { ArrowLeft, Radio, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import type { PartyProjection } from "@/lib/supabase/database.types";
+import type { PartyMemberProjection } from "@/lib/supabase/database.types";
 
-export function PartySetup({ party }: { party: PartyProjection }) {
+export function PartySetup({ party, roster }: { party: PartyProjection; roster: PartyMemberProjection[] }) {
     return (
         <main className="broadcast-shell">
             <header className="broadcast-header">
@@ -22,8 +24,8 @@ export function PartySetup({ party }: { party: PartyProjection }) {
                             <SlidersHorizontal aria-hidden="true" />
                             <div><span>Current Game session</span><h2>Setup</h2></div>
                         </div>
-                        <p>This Party is ready for round configuration. Lobby controls arrive in the next implementation slice.</p>
-                        <button className="broadcast-action" type="button" disabled>Open Lobby · unavailable</button>
+                            <p>{party.game_session_state === "setup" ? "This Party is ready for players to enter." : "Players can now join this Lobby from their phones."}</p>
+                            {party.game_session_state === "setup" && <OpenLobbyButton partyId={party.party_id} expectedRevision={party.revision} />}
                     </div>
                 </section>
                 <aside className="dashboard-rail">
@@ -33,6 +35,8 @@ export function PartySetup({ party }: { party: PartyProjection }) {
                         <div><dt>State</dt><dd>{party.game_session_state}</dd></div>
                         <div><dt>Revision</dt><dd>{party.revision}</dd></div>
                     </dl>
+                    <span className="rail-label">Player roster</span>
+                    <div className="roster-list">{roster.filter((member) => member.member_id).map((member) => <div className="roster-row" key={member.member_id}><span className="roster-color" style={{ backgroundColor: member.color }} aria-hidden="true" /><div><strong>{member.nickname}</strong><span>{member.ready ? "Ready" : "Waiting"} · Score {member.score}</span></div></div>)}</div>
                 </aside>
             </div>
         </main>

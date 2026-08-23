@@ -32,6 +32,10 @@ export type PartyMemberProjection = {
     score: number;
     ready: boolean;
     access_status: "joined" | "removed";
+    party_code?: string;
+    session_state?: "setup" | "lobby" | "live" | "finished";
+    joining_open?: boolean;
+    session_revision?: number;
 };
 
 export type Database = {
@@ -72,7 +76,12 @@ export type Database = {
             picture_caption_templates_projection: { Args: { p_admin_id: string }; Returns: PictureCaptionTemplate[] };
             picture_caption_template_by_id: { Args: { p_template_id: string }; Returns: { template_id: string; picture_url: string }[] };
             open_party_lobby: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: boolean };
-            join_party: { Args: { p_player_id: string; p_party_code: string; p_nickname: string; p_command_id: string }; Returns: PartyMemberProjection[] };
+            join_party: { Args: { p_player_id: string; p_party_code: string; p_nickname: string; p_command_id: string; p_expected_revision: number }; Returns: PartyMemberProjection[] };
+            change_party_member_nickname: { Args: { p_player_id: string; p_member_id: string; p_command_id: string; p_nickname: string; p_expected_revision: number }; Returns: PartyMemberProjection[] };
+            set_party_member_ready: { Args: { p_player_id: string; p_member_id: string; p_command_id: string; p_ready: boolean; p_expected_revision: number }; Returns: PartyMemberProjection[] };
+            player_party_lobby_projection: { Args: { p_player_id: string; p_party_code: string }; Returns: PartyMemberProjection[] };
+            host_party_lobby_projection: { Args: { p_host_id: string; p_party_id: string }; Returns: PartyMemberProjection[] };
+            party_lobby_status: { Args: { p_party_code: string }; Returns: { party_code: string; session_state: string; joining_open: boolean; session_revision: number }[] };
         };
         Enums: Record<string, never>;
         CompositeTypes: Record<string, never>;

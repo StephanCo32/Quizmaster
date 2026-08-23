@@ -6,6 +6,7 @@ const meta = {
     component: PartySetup,
     parameters: { viewport: { defaultViewport: "host" } },
     args: {
+        roster: [],
         party: {
             party_id: "a1111111-1111-4111-8111-111111111111",
             party_code: "ON7AIR",
