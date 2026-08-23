@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { PartySetup } from "@/components/host/party-setup";
 import { getHostParty } from "@/lib/host/parties";
+import { getHostPartyLobby } from "@/lib/player/parties";
 import { getHost } from "@/lib/host/session";
 
 export const metadata: Metadata = { title: "Party control" };
@@ -23,5 +24,6 @@ export default async function HostPartyPage({
         notFound();
     }
 
-    return <PartySetup party={party} />;
+    const roster = await getHostPartyLobby(host.id, partyId);
+    return <PartySetup party={party} roster={roster} />;
 }
