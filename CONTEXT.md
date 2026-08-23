@@ -62,6 +62,38 @@ _Avoid_: Mode, phase
 A reusable set of rules and views used to configure and play game rounds.
 _Avoid_: Game mode, mini-game
 
+**Picture-caption round**:
+A Game round in which eligible Players submit captions for one picture, vote for an anonymous Caption candidate, watch Ballots be revealed, and then see authors and results. Its internal phases are Captioning, Voting, Reveal, and Results.
+_Avoid_: Caption game, picture round
+
+**Captioning**:
+The Active Picture-caption round phase in which eligible Players create or edit one Caption submission.
+_Avoid_: Submission round
+
+**Voting**:
+The Active Picture-caption round phase in which eligible Players cast one final Ballot for a Caption candidate.
+_Avoid_: Rating
+
+**Reveal**:
+The Resolving Picture-caption round phase in which committed Ballots are presented one at a time without changing the already committed result.
+_Avoid_: Resolution
+
+**Results**:
+The Resolving Picture-caption round phase showing Caption candidate authors, vote totals, earned points, co-leaders, and updated scores until the Host continues.
+_Avoid_: Scoreboard
+
+**Caption submission**:
+One Player's editable text response to the picture in a picture-caption Game round. It becomes immutable when Captioning closes and may be removed by the Host only before Voting begins.
+_Avoid_: Answer, Caption candidate
+
+**Caption candidate**:
+An anonymous voting choice formed from one or more Caption submissions with the same normalized text. Every submitting Player is a co-author and receives one point for each valid ballot cast for the candidate.
+_Avoid_: Caption submission, answer
+
+**Ballot**:
+A Player's final selection of one Caption candidate during Voting. A submitted Ballot cannot be changed.
+_Avoid_: Submission, rating
+
 **Public overview**:
 A shared display that shows the current game session state to people in the room.
 _Avoid_: Overview, projector view
