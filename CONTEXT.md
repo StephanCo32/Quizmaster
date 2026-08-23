@@ -9,8 +9,24 @@ An authenticated organizer who creates and controls a game session.
 _Avoid_: Admin, game master
 
 **Player**:
-An anonymous participant in a game session, identified by a browser-held identity and a lobby-scoped nickname and color. Nicknames are case-insensitively unique and may change only in Lobby; a random color is assigned on first join and retained through every Rejoin.
+An anonymous participant in a Game session through a Party membership. A Player retains the Party membership's nickname and color in every successor Game session.
 _Avoid_: User, guest
+
+**Browser identity**:
+An anonymous identity retained by one browser across Parties. It proves control of separate Party memberships for Rejoin but carries no shared nickname, color, score, or profile between them.
+_Avoid_: Player account, global Player
+
+**Party**:
+A Host-owned group that persists across a sequence of Game sessions. Party memberships, nicknames, colors, and cumulative Party scores persist while each successor Game session resets readiness and session scores.
+_Avoid_: Persistent Lobby, room
+
+**Party membership**:
+The association between one Browser identity and one Party. It owns the Player's case-insensitively unique nickname, stable assigned color, Party score, and access status; the nickname may change only while the current Game session is in Lobby.
+_Avoid_: Player account, Game-session membership
+
+**Party code**:
+A short, rotatable public locator for a Party. Knowing it grants no authority by itself; new Party membership is available only while the current Game session is in Lobby and joining is open.
+_Avoid_: Access token, Game-session code
 
 **Lobby**:
 The pre-game state of a game session where players join and can return using their browser identity.
@@ -51,13 +67,17 @@ A shared display that shows the current game session state to people in the room
 _Avoid_: Overview, projector view
 
 **Display session**:
-A time-limited, read-only authorization to view one Game session through its Public overview. It is not a Host or Player identity.
+A revocable, read-only authorization for one shared screen to follow a Party through its current and successor Game sessions. A Party has at most one active Display session, and it is not a Host or Player identity.
 _Avoid_: Display account, viewer account
 
 **Scoreboard**:
 The visible ranking of Players in a game session according to recorded score adjustments.
 _Avoid_: Leaderboard
 
+**Party score**:
+A Player's cumulative score across the Game sessions in one Party. It is shown separately from the current Game session's Scoreboard.
+_Avoid_: Scoreboard, lifetime score
+
 **Score adjustment**:
-An auditable change to a Player's score, recorded by a Game round resolution or an explicit Host correction after the Game session is Finished. A Host correction records its author, time, and signed point delta; it needs no reason.
+An auditable change to a Player's score, recorded by a Game round resolution or an explicit Host correction after the Game session is Finished. A Host correction records its author, time, and signed point delta; it needs no reason and updates the derived Party score.
 _Avoid_: Score edit, point update
