@@ -275,7 +275,7 @@ set_vercel_environment SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY" se
 stage "GitHub Production environment"
 say "Create the protected secret boundary consumed by the Production release workflow."
 gh api --method PUT "repos/${REPOSITORY}/environments/production" --input - \
-  <<< '{"wait_timer":0,"prevent_self_review":false}' >/dev/null
+  <<< '{}' >/dev/null
 set_environment_secret NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
 set_environment_secret NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
 set_environment_secret SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
