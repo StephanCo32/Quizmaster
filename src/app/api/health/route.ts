@@ -8,7 +8,7 @@ export async function GET() {
 
     try {
         const response = await fetch(
-            `${environment.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/`,
+            `${environment.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health`,
             {
                 cache: "no-store",
                 headers: {
