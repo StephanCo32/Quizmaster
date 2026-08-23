@@ -1,7 +1,9 @@
 "use client";
 
-import { Check, Pencil, Radio, RefreshCw } from "lucide-react";
+import { Check, Pencil, Radio, RefreshCw, WifiOff } from "lucide-react";
 import { useState } from "react";
+import { canWriteLobby } from "@/lib/realtime/lobby-subscription";
+import { useLobbySynchronization } from "@/lib/realtime/use-lobby-synchronization";
 import type { PartyMemberProjection } from "@/lib/supabase/database.types";
 
 export function PlayerLobby({ partyCode, initialRoster }: { partyCode: string; initialRoster: PartyMemberProjection[] }) {
@@ -11,22 +13,82 @@ export function PlayerLobby({ partyCode, initialRoster }: { partyCode: string; i
     const [busy, setBusy] = useState(false);
     const member = roster[0];
     const revision = member?.session_revision ?? 0;
+    const connectionState = useLobbySynchronization({
+        gameSessionId: member?.game_session_id ?? "unavailable",
+        revision,
+        refetch: refresh,
+    });
+    const canWrite = canWriteLobby(connectionState);
 
     async function command(body: Record<string, unknown>) {
-        if (!member) return;
-        setBusy(true); setError(null);
-        const response = await fetch(`/api/play/${partyCode}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, memberId: member.member_id, expectedRevision: revision, commandId: crypto.randomUUID() }) });
-        if (!response.ok) { setError(response.status === 409 ? "The Lobby changed. Refresh and try again." : "Your change could not be saved."); setBusy(false); return; }
+        if (!member || !canWrite) return;
+        setBusy(true);
+        setError(null);
+        const response = await fetch(`/api/play/${partyCode}`, {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ ...body, memberId: member.member_id, expectedRevision: revision, commandId: crypto.randomUUID() }),
+        });
+        if (!response.ok) {
+            setError(response.status === 409 ? "The Lobby changed. Refresh and try again." : "Your change could not be saved.");
+            setBusy(false);
+            return;
+        }
         const result = (await response.json()).member as PartyMemberProjection;
         setRoster((current) => current.map((item) => item.member_id === result.member_id ? { ...item, ...result } : item));
-        setNickname(result.nickname); setBusy(false);
+        setNickname(result.nickname);
+        setBusy(false);
     }
 
     async function refresh() {
         const response = await fetch(`/api/play/${partyCode}`, { cache: "no-store" });
-        if (response.ok) setRoster((await response.json()).roster as PartyMemberProjection[]);
+        if (!response.ok) throw new Error("player_projection_unavailable");
+        setRoster((await response.json()).roster as PartyMemberProjection[]);
     }
 
     if (!member) return <main className="broadcast-shell state-screen"><section className="state-block"><h1>Player not found</h1><p>Join this Party again to establish your Browser identity.</p></section></main>;
-    return <main className="broadcast-shell"><header className="broadcast-header"><span className="broadcast-brand"><span className="broadcast-mark">Q</span><span>Quizmaster</span></span><span className="signal-chip"><Radio size={16} /> {partyCode}</span></header><div className="dashboard-grid"><section className="dashboard-stage"><p className="broadcast-kicker">Lobby / {member.session_state}</p><h1>Make some noise.</h1><p className="lede">You are <strong>{member.nickname}</strong>. Watch the shared screen for the next move.</p><div className="broadcast-panel player-card"><div className="player-color" style={{ backgroundColor: member.color }} aria-label="Your assigned Player color" /><div><span className="rail-label">Your status</span><h2>{member.ready ? "Ready to play" : "Not ready yet"}</h2></div><button className="broadcast-action" type="button" disabled={busy || member.session_state !== "lobby"} onClick={() => command({ ready: !member.ready })}><Check aria-hidden="true" /> {member.ready ? "Set not ready" : "I am ready"}</button></div><form className="broadcast-panel nickname-form" onSubmit={(event) => { event.preventDefault(); void command({ nickname }); }}><label>Nickname<input required minLength={1} maxLength={30} value={nickname} onChange={(event) => setNickname(event.target.value)} /></label><button className="icon-button" type="submit" disabled={busy || member.session_state !== "lobby"} title="Change nickname" aria-label="Change nickname"><Pencil aria-hidden="true" /></button></form><button className="back-link refresh-button" type="button" onClick={() => void refresh()}><RefreshCw size={18} /> Refresh Lobby</button>{error && <div className="status-notice status-error" role="alert">{error}</div>}</section><aside className="dashboard-rail"><span className="rail-label">Player roster</span><div className="roster-list">{roster.map((item) => <div className="roster-row" key={item.member_id}><span className="roster-color" style={{ backgroundColor: item.color }} aria-hidden="true" /><div><strong>{item.nickname}</strong><span>{item.ready ? "Ready" : "Waiting"} · Score {item.score}</span></div></div>)}</div></aside></div></main>;
+
+    return (
+        <main className="broadcast-shell">
+            <header className="broadcast-header">
+                <span className="broadcast-brand"><span className="broadcast-mark">Q</span><span>Quizmaster</span></span>
+                <span className="signal-chip"><Radio size={16} /> {partyCode}</span>
+            </header>
+            <div className="dashboard-grid">
+                <section className="dashboard-stage">
+                    <p className="broadcast-kicker">Lobby / {member.session_state}</p>
+                    <h1>Make some noise.</h1>
+                    <p className="lede">You are <strong>{member.nickname}</strong>. Watch the shared screen for the next move.</p>
+                    {connectionState !== "connected" && (
+                        <div className="status-notice status-error" role="status">
+                            <WifiOff aria-hidden="true" /> {connectionState === "reconnecting" ? "Reconnecting and refreshing the committed Lobby..." : "Disconnected. Showing the last committed Lobby; Player writes are paused."}
+                        </div>
+                    )}
+                    <div className="broadcast-panel player-card">
+                        <div className="player-color" style={{ backgroundColor: member.color }} aria-label="Your assigned Player color" />
+                        <div><span className="rail-label">Your status</span><h2>{member.ready ? "Ready to play" : "Not ready yet"}</h2></div>
+                        <button className="broadcast-action" type="button" disabled={busy || !canWrite || member.session_state !== "lobby"} onClick={() => command({ ready: !member.ready })}>
+                            <Check aria-hidden="true" /> {member.ready ? "Set not ready" : "I am ready"}
+                        </button>
+                    </div>
+                    <form className="broadcast-panel nickname-form" onSubmit={(event) => { event.preventDefault(); void command({ nickname }); }}>
+                        <label>Nickname<input required minLength={1} maxLength={30} value={nickname} onChange={(event) => setNickname(event.target.value)} /></label>
+                        <button className="icon-button" type="submit" disabled={busy || !canWrite || member.session_state !== "lobby"} title="Change nickname" aria-label="Change nickname"><Pencil aria-hidden="true" /></button>
+                    </form>
+                    <button className="back-link refresh-button" type="button" onClick={() => void refresh()}><RefreshCw size={18} /> Refresh Lobby</button>
+                    {error && <div className="status-notice status-error" role="alert">{error}</div>}
+                </section>
+                <aside className="dashboard-rail">
+                    <span className="rail-label">Player roster</span>
+                    <div className="roster-list">
+                        {roster.map((item) => <div className="roster-row" key={item.member_id}><span className="roster-color" style={{ backgroundColor: item.color }} aria-hidden="true" /><div><strong>{item.nickname}</strong><span>{item.ready ? "Ready" : "Waiting"} · Session {item.score} · Party {item.score}</span></div></div>)}
+                    </div>
+                    <div className={`connection-card connection-${connectionState === "connected" ? "connected" : "disconnected"}`}>
+                        <span className="connection-light" aria-hidden="true" />
+                        <div><strong>{connectionState}</strong><span>{connectionState === "connected" ? "Lobby projection current" : "Showing last committed state"}</span></div>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    );
 }

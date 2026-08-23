@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { joinParty } from "@/lib/player/parties";
 import { playerCookieName } from "@/lib/player/identity";
+import { publishLobbyInvalidation } from "@/lib/realtime/lobby-invalidation";
 
 const schema = z.object({ commandId: z.string().uuid(), partyCode: z.string().regex(/^[A-Za-z0-9]{6}$/), nickname: z.string().trim().min(1).max(30), expectedRevision: z.number().int().nonnegative() });
 
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
     if (!playerId) playerId = crypto.randomUUID();
     try {
         const member = await joinParty({ playerId, ...parsed.data });
+        await publishLobbyInvalidation({ gameSessionId: member.game_session_id, revision: member.session_revision });
         const response = NextResponse.json({ member });
         if (!cookieStore.has(playerCookieName)) response.cookies.set(playerCookieName, playerId, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/" });
         return response;

@@ -50,5 +50,7 @@ export async function getPartyLobbyStatus(partyCode: string) {
 export async function openPartyLobby(command: { hostId: string; partyId: string; commandId: string; expectedRevision: number }) {
     const { data, error } = await createSupabaseAdminClient().rpc("open_party_lobby", { p_host_id: command.hostId, p_party_id: command.partyId, p_command_id: command.commandId, p_expected_revision: command.expectedRevision });
     if (error) throw new Error(error.code === "40001" ? "stale_revision" : "lobby_open_failed", { cause: error });
-    return data;
+    const result = data.at(0);
+    if (!result) throw new Error("lobby_open_failed");
+    return result;
 }
