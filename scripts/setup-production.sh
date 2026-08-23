@@ -200,9 +200,15 @@ set_environment_secret() {
 }
 
 set_vercel_environment() {
-  local name="$1" value="$2"
+  local name="$1" value="$2" visibility="$3"
+  local visibility_flags=()
+  case "$visibility" in
+    public) visibility_flags=(--visibility config --no-sensitive) ;;
+    secret) visibility_flags=(--sensitive) ;;
+    *) warn "unknown Vercel visibility for $name"; return 1 ;;
+  esac
   printf '%s' "$value" | npx --yes "$VERCEL_CLI" env add "$name" production \
-    --force --sensitive --token="$VERCEL_TOKEN" >/dev/null
+    --force "${visibility_flags[@]}" --token="$VERCEL_TOKEN" >/dev/null
   printf '  %s✓ set%s Vercel Production value %s\n' "$GREEN" "$RESET" "$name"
 }
 
@@ -220,14 +226,7 @@ gh auth status >/dev/null 2>&1 || {
   warn "GitHub CLI is not authenticated. Run: gh auth login"
   exit 1
 }
-[[ "$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)" == "main" ]] || {
-  warn "Run this wizard from the main branch."
-  exit 1
-}
-[[ -z "$(git status --porcelain)" ]] || {
-  warn "Commit or stash local changes before provisioning Production."
-  exit 1
-}
+[[ -z "$(git status --porcelain)" ]] || warn "Local changes are present; setup can continue, but release will require a clean main branch."
 if ! command -v gpg >/dev/null 2>&1 || [[ -z "$(gpg --list-secret-keys --with-colons 2>/dev/null | grep '^sec:' || true)" ]]; then
   warn "No GPG signing key was found. Configure one before the release stage."
 fi
@@ -269,9 +268,9 @@ npx --yes "$VERCEL_CLI" link --yes --project "$VERCEL_PROJECT_NAME" \
   --scope="$VERCEL_SCOPE" --token="$VERCEL_TOKEN"
 VERCEL_PROJECT_ID=$(node -p "require('./.vercel/project.json').projectId")
 VERCEL_ORG_ID=$(node -p "require('./.vercel/project.json').orgId")
-set_vercel_environment NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
-set_vercel_environment NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
-set_vercel_environment SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
+set_vercel_environment NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL" public
+set_vercel_environment NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" public
+set_vercel_environment SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY" secret
 
 stage "GitHub Production environment"
 say "Create the protected secret boundary consumed by the Production release workflow."
@@ -289,6 +288,14 @@ set_environment_secret VERCEL_PROJECT_ID "$VERCEL_PROJECT_ID"
 
 stage "First signed release"
 say "The tag starts migration and deployment. Continue only after the latest main CI run succeeds."
+[[ "$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)" == "main" ]] || {
+  warn "Release must run from the main branch."
+  exit 1
+}
+[[ -z "$(git status --porcelain)" ]] || {
+  warn "Commit or stash local changes before releasing Production."
+  exit 1
+}
 LATEST_CI=$(gh run list --repo "$REPOSITORY" --workflow CI --branch main --limit 1 \
   --json conclusion --jq '.[0].conclusion')
 [[ "$LATEST_CI" == "success" ]] || {
