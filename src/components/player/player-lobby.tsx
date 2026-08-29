@@ -2,7 +2,7 @@
 
 import { Check, Pencil, Radio, RefreshCw, WifiOff } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { canWriteLobby } from "@/lib/realtime/lobby-subscription";
 import { useLobbySynchronization } from "@/lib/realtime/use-lobby-synchronization";
@@ -38,6 +38,17 @@ export function PlayerLobby({
     refetch: refresh,
   });
   const canWrite = canWriteLobby(connectionState);
+
+  const secondsRemaining = activeRound?.captioning_deadline
+    ? Math.max(0, Math.ceil((new Date(activeRound.captioning_deadline).getTime() - Date.now()) / 1000))
+    : activeRound?.paused_remaining_seconds ?? null;
+  const refreshForCountdown = useEffectEvent(() => void refresh());
+
+  useEffect(() => {
+    if (secondsRemaining === null) return;
+    const timer = window.setTimeout(refreshForCountdown, 1000);
+    return () => window.clearTimeout(timer);
+  }, [secondsRemaining]);
 
   async function command(body: Record<string, unknown>) {
     if (!member || !canWrite) return;
@@ -149,8 +160,8 @@ export function PlayerLobby({
                   : "Disconnected. Showing the last committed Lobby; Player writes are paused."}
             </div>
           )}
-          {activeRound && <section className="broadcast-panel player-card"><Image src={`/api/play/${partyCode}/rounds/${activeRound.round_id}/picture`} alt="Picture caption round" width={640} height={360} unoptimized /><div><span className="rail-label">{activeRound.phase}{activeRound.paused_remaining_seconds !== null ? " paused" : ""}</span><h2>{activeRound.prompt ?? "Write a caption."}</h2><p>{activeRound.captioning_deadline ? `Ends ${new Date(activeRound.captioning_deadline).toLocaleTimeString()}` : `${activeRound.paused_remaining_seconds ?? 0} seconds remaining`}</p></div></section>}
-          {activeRound?.phase === "captioning" && <form className="broadcast-panel nickname-form" onSubmit={submitCaption}><label>Caption<textarea required maxLength={1000} rows={3} value={caption} onChange={(event) => setCaption(event.target.value)} /></label><button className="broadcast-action" type="submit" disabled={busy || !canWrite || activeRound.captioning_deadline === null}>{initialSubmission ? "Update caption" : "Submit caption"}</button></form>}
+          {activeRound && <section className="broadcast-panel player-card">{activeRound.phase === "captioning" && <Image src={`/api/play/${partyCode}/rounds/${activeRound.round_id}/picture`} alt="Picture caption round" width={640} height={360} unoptimized />}<div><span className="rail-label">{activeRound.phase}{activeRound.paused_remaining_seconds !== null ? " paused" : ""}</span><h2>{activeRound.phase === "voting" ? "Choose your favorite caption." : activeRound.prompt ?? "Write a caption."}</h2>{secondsRemaining !== null && <p className="round-countdown">{secondsRemaining}s</p>}</div></section>}
+          {activeRound?.phase === "captioning" && <form className="broadcast-panel nickname-form" onSubmit={submitCaption}><label>Caption<textarea required maxLength={1000} rows={3} value={caption} onChange={(event) => setCaption(event.target.value)} /></label><button className="broadcast-action" type="submit" disabled={busy || !canWrite || activeRound.captioning_deadline === null}>{caption ? "Update caption" : "Submit caption"}</button></form>}
           {activeRound?.phase === "voting" && <section className="broadcast-panel"><h2>Choose a caption</h2><div className="roster-list">{candidates.map((candidate) => <button className="roster-row" type="button" key={candidate.candidate_id} disabled={busy || !canWrite || candidate.has_voted} onClick={() => void castBallot(candidate.candidate_id)}><span className="roster-color" style={{ backgroundColor: candidate.is_own ? candidate.own_color : "transparent" }} aria-label={candidate.is_own ? "Your caption" : undefined} /><strong>{candidate.caption}</strong></button>)}</div>{candidates[0]?.has_voted && <p>Ballot submitted. Waiting for the result.</p>}</section>}
           {member.session_state === "finished" && <section className="broadcast-panel"><h2>Game session complete</h2><p>Scores are settled. Waiting for the Host to start the next session.</p></section>}
           {member.session_state === "lobby" && !activeRound && <section className="broadcast-panel"><h2>Intermission</h2><p>The next Game session is ready. Mark yourself ready when the Host is set.</p></section>}

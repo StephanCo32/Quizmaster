@@ -218,8 +218,25 @@ h1 {
 }
 
 .broadcast-shell button,
-.broadcast-shell input {
+.broadcast-shell input,
+.broadcast-shell select,
+.broadcast-shell textarea {
 	font: inherit;
+}
+
+.broadcast-shell :is(input, select, textarea) {
+	width: 100%;
+	padding: 12px;
+	color: var(--broadcast-deep);
+	background: var(--broadcast-paper);
+	border: 2px solid var(--broadcast-paper);
+	border-radius: 3px;
+	font: inherit;
+}
+
+.broadcast-shell textarea {
+	min-height: 108px;
+	resize: vertical;
 }
 
 .broadcast-header {
@@ -421,7 +438,7 @@ h1 {
 	cursor: not-allowed;
 }
 
-.broadcast-shell :is(a, button, input):focus-visible {
+.broadcast-shell :is(a, button, input, select, textarea):focus-visible {
 	outline: 4px solid var(--broadcast-yellow);
 	outline-offset: 3px;
 }

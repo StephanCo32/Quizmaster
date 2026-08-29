@@ -1,7 +1,7 @@
 "use client";
 
 import { OpenLobbyButton } from "@/components/host/open-lobby-button";
-import { ArrowDown, ArrowLeft, ArrowUp, Copy, KeyRound, Pause, Pencil, Play, Plus, Radio, SlidersHorizontal, Trash2, UserRoundCheck, UserRoundX, WifiOff } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Copy, KeyRound, Pause, Pencil, Play, Plus, Radio, SlidersHorizontal, Trash2, UserRoundX, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import type { HostPictureCaptionBallot, HostPictureCaptionTemplate, PartyMemberProjection, PartyProjection, PictureCaptionCompletion, PictureCaptionRound, PictureCaptionSubmission } from "@/lib/supabase/database.types";
@@ -212,7 +212,7 @@ export function PartySetup({
           <span className="rail-label">Player roster</span>
           <div className="roster-list">
             {roster
-              .filter((member) => member.member_id)
+              .filter((member) => member.member_id && member.access_status === "joined")
               .map((member) => (
                 <div className="roster-row" key={member.member_id}>
                   <span
@@ -222,20 +222,17 @@ export function PartySetup({
                   />
                   <div>
                     <strong>{member.nickname}</strong>
-                    <span>
-                      {member.access_status === "removed" ? "Removed" : member.ready ? "Ready" : "Waiting"} · Score{" "}
-                      {member.score}
-                    </span>
+                    <span>{member.ready ? "Ready" : "Waiting"} · Score {member.score}</span>
                   </div>
                   <button
                     className="icon-button"
                     type="button"
                     disabled={busy || busyMemberId === member.member_id || !canWrite}
                     onClick={() => void setMemberAccess(member)}
-                    title={member.access_status === "removed" ? `Restore ${member.nickname}` : `Remove ${member.nickname}`}
-                    aria-label={member.access_status === "removed" ? `Restore ${member.nickname}` : `Remove ${member.nickname}`}
+                    title={`Remove ${member.nickname}`}
+                    aria-label={`Remove ${member.nickname}`}
                   >
-                    {member.access_status === "removed" ? <UserRoundCheck aria-hidden="true" /> : <UserRoundX aria-hidden="true" />}
+                    <UserRoundX aria-hidden="true" />
                   </button>
                 </div>
               ))}
