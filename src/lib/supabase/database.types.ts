@@ -67,6 +67,9 @@ export type Database = {
             };
             ensure_content_admin: { Args: { p_user_id: string }; Returns: boolean };
             content_admin_check: { Args: { p_user_id: string }; Returns: boolean };
+            grant_content_admin: { Args: { p_actor_id: string; p_target_id: string }; Returns: boolean };
+            revoke_content_admin: { Args: { p_actor_id: string; p_target_id: string }; Returns: boolean };
+            content_admin_roles_projection: { Args: { p_admin_id: string }; Returns: { user_id: string }[] };
             create_picture_caption_template: {
                 Args: { p_admin_id: string; p_command_id: string; p_name: string; p_picture_url: string; p_prompt: string | null };
                 Returns: PictureCaptionTemplate[];
