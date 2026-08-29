@@ -17,7 +17,7 @@ const meta = {
     title: "Host/Dashboard",
     component: HostDashboard,
     parameters: { viewport: { defaultViewport: "host" } },
-    args: { hostEmail: "host@example.com", parties },
+    args: { hostEmail: "host@example.com", parties, isContentAdmin: true },
 } satisfies Meta<typeof HostDashboard>;
 
 export default meta;
