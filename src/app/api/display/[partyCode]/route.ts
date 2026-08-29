@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDisplayParty, getDisplayPartyCanonicalCode, getDisplayPartyLobby, getDisplaySessionId } from "@/lib/display/sessions";
+import { getDisplayParty, getDisplayPartyCanonicalCode, getDisplayPartyLobby, getDisplayPictureCaptionRound, getDisplaySessionId } from "@/lib/display/sessions";
 
 export async function GET(_request: Request, context: { params: Promise<{ partyCode: string }> }) {
     const displaySessionId = await getDisplaySessionId();
@@ -10,7 +10,8 @@ export async function GET(_request: Request, context: { params: Promise<{ partyC
         if (!canonicalCode) return NextResponse.json({ error: "not_found" }, { status: 404 });
         const party = await getDisplayParty(displaySessionId, canonicalCode);
         if (!party) return NextResponse.json({ error: "not_found" }, { status: 404 });
-        return NextResponse.json({ canonicalCode, party, roster: await getDisplayPartyLobby(displaySessionId, canonicalCode) });
+        const [roster, activeRound] = await Promise.all([getDisplayPartyLobby(displaySessionId, canonicalCode), getDisplayPictureCaptionRound(displaySessionId, canonicalCode)]);
+        return NextResponse.json({ canonicalCode, party, roster, activeRound });
     } catch {
         return NextResponse.json({ error: "not_found" }, { status: 404 });
     }

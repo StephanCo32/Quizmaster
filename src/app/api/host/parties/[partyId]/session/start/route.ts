@@ -1,0 +1,7 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { startPictureCaptionSession } from "@/lib/host/rounds";
+import { getHost } from "@/lib/host/session";
+import { publishLobbyInvalidation } from "@/lib/realtime/lobby-invalidation";
+const schema = z.object({ commandId: z.string().uuid(), expectedRevision: z.number().int().nonnegative() }).strict();
+export async function POST(request: Request, context: { params: Promise<{ partyId: string }> }) { const host = await getHost(); const parsed = schema.safeParse(await request.json()); if (!host) return NextResponse.json({ error: "not_found" }, { status: 404 }); if (!parsed.success) return NextResponse.json({ error: "invalid_request" }, { status: 400 }); const { partyId } = await context.params; try { const result = await startPictureCaptionSession({ hostId: host.id, partyId, ...parsed.data }); await publishLobbyInvalidation({ gameSessionId: result.game_session_id, revision: result.session_revision }); return NextResponse.json({ started: true }); } catch (error) { const message = error instanceof Error ? error.message : "unavailable"; return NextResponse.json({ error: ["stale_revision", "players_not_ready", "no_pending_round"].includes(message) ? message : "unavailable" }, { status: ["stale_revision", "players_not_ready", "no_pending_round"].includes(message) ? 409 : 503 }); } }
