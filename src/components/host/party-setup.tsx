@@ -150,7 +150,7 @@ export function PartySetup({
                   : "Disconnected. Showing the last committed Lobby; Host writes are paused."}
             </div>
           )}
-          <div className="broadcast-panel setup-panel">
+          <div className="broadcast-panel setup-panel session-panel">
             <div className="panel-heading">
               <SlidersHorizontal aria-hidden="true" />
               <div>
@@ -163,22 +163,24 @@ export function PartySetup({
                 ? "This Party is ready for players to enter."
                 : "Players can now join this Lobby from their phones."}
             </p>
-            {party.game_session_state === "setup" && (
-              <OpenLobbyButton
-                partyId={party.party_id}
-                expectedRevision={party.revision}
-                disabled={!canWrite}
-                onOpened={refresh}
-              />
-            )}
-            {party.game_session_state === "lobby" && (
-              <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void command({ action: "set-joining", joiningOpen: !joiningOpen })}>
-                {joiningOpen ? "Close joining" : "Open joining"}
+            <div className="session-actions">
+              {party.game_session_state === "setup" && (
+                <OpenLobbyButton
+                  partyId={party.party_id}
+                  expectedRevision={party.revision}
+                  disabled={!canWrite}
+                  onOpened={refresh}
+                />
+              )}
+              {party.game_session_state === "lobby" && (
+                <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void command({ action: "set-joining", joiningOpen: !joiningOpen })}>
+                  {joiningOpen ? "Close joining" : "Open joining"}
+                </button>
+              )}
+              <button className="back-link" type="button" disabled={busy || !canWrite} onClick={() => void rotateCode()}>
+                <KeyRound aria-hidden="true" /> Rotate Party code
               </button>
-            )}
-            <button className="back-link" type="button" disabled={busy || !canWrite} onClick={() => void rotateCode()}>
-              <KeyRound aria-hidden="true" /> Rotate Party code
-            </button>
+            </div>
             {error && <div className="status-notice status-error" role="alert">{error}</div>}
           </div>
           <div className="broadcast-panel setup-panel">
