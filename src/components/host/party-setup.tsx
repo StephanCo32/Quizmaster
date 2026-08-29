@@ -117,6 +117,7 @@ export function PartySetup({
   }
 
   async function captionCommand(body: Record<string, unknown>) { await roundCommand(body, "captions"); }
+  async function lifecycleCommand(body: Record<string, unknown>) { await roundCommand(body, "lifecycle"); }
 
   return (
     <main className="broadcast-shell">
@@ -187,6 +188,9 @@ export function PartySetup({
             {party.game_session_state === "live" && rounds.some((round) => round.phase === "voting") && <><p>{new Set(ballots.filter((ballot) => ballot.voter_nickname).map((ballot) => ballot.voter_nickname)).size} ballots received</p><div className="roster-list">{ballots.map((ballot) => <div className="roster-row" key={`${ballot.candidate_id}-${ballot.voter_nickname ?? "pending"}`}><div><strong>{ballot.caption}</strong><span>{ballot.voter_nickname ?? "No ballot yet"}</span></div><b>{ballot.points}</b></div>)}</div><button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => { if (window.confirm("Close Voting with missing ballots?")) void roundCommand({ confirmMissing: true }, "ballots"); }}>Close Voting</button></>}
             {party.game_session_state === "live" && rounds.some((round) => round.state === "completed") && !rounds.some((round) => round.phase === "revealing") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void roundCommand({ action: "start-reveal" }, "results")}>Start Reveal</button>}
             {party.game_session_state === "live" && rounds.some((round) => round.phase === "revealing") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void roundCommand({ action: "continue" }, "results")}>Continue</button>}
+            {party.game_session_state === "live" && !rounds.some((round) => round.state === "active") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "finish" })}>Finish Game session</button>}
+            {party.game_session_state === "finished" && <><p>Finished. Scores can be corrected before the next Game session.</p><div className="roster-list">{roster.filter((member) => member.access_status === "joined").map((member) => <div className="roster-row" key={`score-${member.member_id}`}><strong>{member.nickname}</strong><span>{member.score} points</span><button className="icon-button" type="button" title={`Subtract one point from ${member.nickname}`} disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "adjust", memberId: member.member_id, delta: -1 })}>-</button><button className="icon-button" type="button" title={`Add one point to ${member.nickname}`} disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "adjust", memberId: member.member_id, delta: 1 })}>+</button></div>)}</div><button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "successor" })}>Start next Game session</button></>}
+            <button className="back-link" type="button" disabled={busy || !canWrite} onClick={() => { if (window.confirm("Permanently delete this Party and all of its Game history?")) void lifecycleCommand({ action: "delete" }); }}>Delete Party</button>
           </div>
         </section>
         <aside className="dashboard-rail">
