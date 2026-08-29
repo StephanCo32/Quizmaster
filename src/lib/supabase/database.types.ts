@@ -204,6 +204,7 @@ export type Database = {
             close_picture_caption_voting: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number; p_confirm_missing: boolean }; Returns: LobbyCommandResult[] };
             start_picture_caption_reveal: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: LobbyCommandResult[] };
             continue_picture_caption_round: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: LobbyCommandResult[] };
+            resolve_picture_caption_deadline: { Args: { p_game_session_id: string }; Returns: undefined };
             resolve_picture_caption_reveal: { Args: { p_game_session_id: string }; Returns: undefined };
             player_picture_caption_results_projection: { Args: { p_player_id: string; p_party_code: string }; Returns: PictureCaptionResult[] };
             display_picture_caption_results_projection: { Args: { p_display_session_id: string; p_party_code: string }; Returns: PictureCaptionResult[] };

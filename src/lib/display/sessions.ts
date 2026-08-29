@@ -49,7 +49,14 @@ export async function getDisplayPictureCaptionRound(displaySessionId: string, pa
     const client = createSupabaseAdminClient();
     const { data, error } = await client.rpc("display_picture_caption_round_projection", { p_display_session_id: displaySessionId, p_party_code: partyCode });
     if (error) throw new Error("display_projection_unavailable", { cause: error });
-    const round = data.at(0) ?? null;
+    let round = data.at(0) ?? null;
+    if (round?.phase === "captioning" || round?.phase === "voting") {
+        const { error: deadlineError } = await client.rpc("resolve_picture_caption_deadline", { p_game_session_id: round.game_session_id });
+        if (deadlineError) throw new Error("display_projection_unavailable", { cause: deadlineError });
+        const { data: resolved, error: resolvedError } = await client.rpc("display_picture_caption_round_projection", { p_display_session_id: displaySessionId, p_party_code: partyCode });
+        if (resolvedError) throw new Error("display_projection_unavailable", { cause: resolvedError });
+        round = resolved.at(0) ?? null;
+    }
     if (round?.phase !== "revealing") return round;
     const { error: resolveError } = await client.rpc("resolve_picture_caption_reveal", { p_game_session_id: round.game_session_id });
     if (resolveError) throw new Error("display_projection_unavailable", { cause: resolveError });
