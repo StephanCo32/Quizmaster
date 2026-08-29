@@ -319,6 +319,49 @@ h1 {
 	background: var(--broadcast-rail);
 }
 
+.template-editor form {
+	display: grid;
+	gap: 20px;
+	margin-top: 20px;
+}
+
+.template-editor label {
+	display: grid;
+	gap: 8px;
+	color: var(--broadcast-paper);
+	font-size: 14px;
+	font-weight: 800;
+}
+
+.template-editor :is(input, textarea) {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 12px;
+	color: var(--broadcast-deep);
+	background: var(--broadcast-paper);
+	border: 2px solid var(--broadcast-paper);
+	border-radius: 3px;
+	font: inherit;
+}
+
+.template-editor textarea {
+	min-height: 120px;
+	resize: vertical;
+}
+
+.template-editor-preview {
+	width: 100%;
+	height: 148px;
+	object-fit: cover;
+	background: var(--broadcast-panel);
+	border: 2px solid var(--broadcast-paper);
+	border-radius: 3px;
+}
+
+.template-editor :is(input, textarea)::placeholder {
+	color: #686979;
+}
+
 .broadcast-kicker,
 .rail-label,
 .panel-heading span {
@@ -347,6 +390,11 @@ h1 {
 	justify-content: space-between;
 	gap: 32px;
 	margin-bottom: 32px;
+}
+
+.dashboard-actions {
+	display: flex;
+	gap: 12px;
 }
 
 .broadcast-action {
@@ -385,7 +433,7 @@ h1 {
 
 .party-row {
 	display: grid;
-	grid-template-columns: 54px minmax(0, 1fr) auto;
+	grid-template-columns: 88px minmax(0, 1fr) auto auto;
 	align-items: center;
 	gap: 16px;
 	min-height: 84px;
@@ -393,6 +441,15 @@ h1 {
 	background: var(--broadcast-panel);
 	border: 2px solid var(--broadcast-line);
 	border-left: 6px solid var(--broadcast-mint);
+}
+
+.template-thumbnail {
+	display: block;
+	width: 88px;
+	height: 64px;
+	object-fit: cover;
+	border: 2px solid var(--broadcast-paper);
+	border-radius: 3px;
 }
 
 .party-row:hover {
