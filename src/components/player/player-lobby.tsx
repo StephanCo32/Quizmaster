@@ -12,14 +12,17 @@ export function PlayerLobby({
   partyCode,
   initialRoster,
   initialActiveRound,
+  initialSubmission,
 }: {
   partyCode: string;
   initialRoster: PartyMemberProjection[];
   initialActiveRound: ActivePictureCaptionRound | null;
+  initialSubmission: { caption: string } | null;
 }) {
   const router = useRouter();
   const [roster, setRoster] = useState(initialRoster);
   const [activeRound, setActiveRound] = useState(initialActiveRound);
+  const [caption, setCaption] = useState(initialSubmission?.caption ?? "");
   const [nickname, setNickname] = useState(initialRoster[0]?.nickname ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -75,6 +78,7 @@ export function PlayerLobby({
       canonicalCode: string;
       roster: PartyMemberProjection[];
       activeRound: ActivePictureCaptionRound | null;
+      submission: { caption: string } | null;
     };
     if (projection.canonicalCode !== partyCode) {
       router.replace(`/play/${projection.canonicalCode}`);
@@ -88,6 +92,16 @@ export function PlayerLobby({
         : currentRoster,
     );
     setActiveRound(projection.activeRound);
+    setCaption(projection.submission?.caption ?? "");
+  }
+
+  async function submitCaption(event: React.FormEvent) {
+    event.preventDefault(); if (!activeRound || !canWrite) return;
+    setBusy(true); setError(null);
+    const response = await fetch(`/api/play/${partyCode}/caption`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ commandId: crypto.randomUUID(), expectedRevision: revision, caption }) });
+    if (!response.ok) setError(response.status === 400 ? "Use one to three non-empty lines within the caption limit." : "Captioning changed. Refresh and try again.");
+    else await refresh();
+    setBusy(false);
   }
 
   if (!member)
@@ -129,6 +143,7 @@ export function PlayerLobby({
             </div>
           )}
           {activeRound && <section className="broadcast-panel player-card"><Image src={`/api/play/${partyCode}/rounds/${activeRound.round_id}/picture`} alt="Picture caption round" width={640} height={360} unoptimized /><div><span className="rail-label">{activeRound.phase}{activeRound.paused_remaining_seconds !== null ? " paused" : ""}</span><h2>{activeRound.prompt ?? "Write a caption."}</h2><p>{activeRound.captioning_deadline ? `Ends ${new Date(activeRound.captioning_deadline).toLocaleTimeString()}` : `${activeRound.paused_remaining_seconds ?? 0} seconds remaining`}</p></div></section>}
+          {activeRound?.phase === "captioning" && <form className="broadcast-panel nickname-form" onSubmit={submitCaption}><label>Caption<textarea required maxLength={1000} rows={3} value={caption} onChange={(event) => setCaption(event.target.value)} /></label><button className="broadcast-action" type="submit" disabled={busy || !canWrite || activeRound.captioning_deadline === null}>{initialSubmission ? "Update caption" : "Submit caption"}</button></form>}
           <div className="broadcast-panel player-card">
             <div
               className="player-color"

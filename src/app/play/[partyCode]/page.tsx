@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { PlayerLobby } from "@/components/player/player-lobby";
 import { getPlayerId } from "@/lib/player/identity";
-import { getPlayerPartyCanonicalCode, getPlayerPartyLobby, getPlayerPictureCaptionRound } from "@/lib/player/parties";
+import { getPlayerPartyCanonicalCode, getPlayerPartyLobby, getPlayerPictureCaptionRound, getPlayerPictureCaptionSubmission } from "@/lib/player/parties";
 
 export const metadata: Metadata = { title: "Player Lobby" };
 
@@ -15,5 +15,6 @@ export default async function PlayerPartyPage({ params }: { params: Promise<{ pa
     if (canonicalCode !== partyCode.toUpperCase()) redirect(`/play/${canonicalCode}`);
     const roster = await getPlayerPartyLobby(playerId, canonicalCode);
     if (roster.length === 0) notFound();
-    return <PlayerLobby partyCode={canonicalCode} initialRoster={roster} initialActiveRound={await getPlayerPictureCaptionRound(playerId, canonicalCode)} />;
+    const [activeRound, submission] = await Promise.all([getPlayerPictureCaptionRound(playerId, canonicalCode), getPlayerPictureCaptionSubmission(playerId, canonicalCode)]);
+    return <PlayerLobby partyCode={canonicalCode} initialRoster={roster} initialActiveRound={activeRound} initialSubmission={submission} />;
 }

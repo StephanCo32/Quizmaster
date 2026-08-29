@@ -4,7 +4,7 @@ import { OpenLobbyButton } from "@/components/host/open-lobby-button";
 import { ArrowDown, ArrowLeft, ArrowUp, Copy, KeyRound, Pause, Pencil, Play, Plus, Radio, SlidersHorizontal, Trash2, UserRoundCheck, UserRoundX, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import type { HostPictureCaptionTemplate, PartyMemberProjection, PartyProjection, PictureCaptionRound } from "@/lib/supabase/database.types";
+import type { HostPictureCaptionTemplate, PartyMemberProjection, PartyProjection, PictureCaptionCompletion, PictureCaptionRound, PictureCaptionSubmission } from "@/lib/supabase/database.types";
 import { canWriteLobby } from "@/lib/realtime/lobby-subscription";
 import { useLobbySynchronization } from "@/lib/realtime/use-lobby-synchronization";
 
@@ -13,17 +13,23 @@ export function PartySetup({
   roster: initialRoster,
   rounds: initialRounds,
   templates: initialTemplates,
+  initialSubmissions,
+  initialCompletion,
 }: {
   party: PartyProjection;
   roster: PartyMemberProjection[];
   rounds: PictureCaptionRound[];
   templates: HostPictureCaptionTemplate[];
+  initialSubmissions: PictureCaptionSubmission[];
+  initialCompletion: PictureCaptionCompletion | null;
 }) {
   const [party, setParty] = useState(initialParty);
   const [roster, setRoster] = useState(initialRoster);
   const [rounds, setRounds] = useState(initialRounds);
   const [templates, setTemplates] = useState(initialTemplates);
   const [selectedTemplateId, setSelectedTemplateId] = useState(initialTemplates[0]?.template_id ?? "");
+  const [submissions, setSubmissions] = useState(initialSubmissions);
+  const [completion, setCompletion] = useState(initialCompletion);
   const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +49,10 @@ export function PartySetup({
     if (!roundsResponse.ok) throw new Error("round_projection_unavailable");
     const roundProjection = await roundsResponse.json() as { rounds: PictureCaptionRound[]; templates: HostPictureCaptionTemplate[] };
     setRounds(roundProjection.rounds); setTemplates(roundProjection.templates);
+    const captionsResponse = await fetch(`/api/host/parties/${party.party_id}/captions`, { cache: "no-store" });
+    if (!captionsResponse.ok) throw new Error("caption_projection_unavailable");
+    const captions = await captionsResponse.json() as { submissions: PictureCaptionSubmission[]; completion: PictureCaptionCompletion | null };
+    setSubmissions(captions.submissions); setCompletion(captions.completion);
   }
 
   const connectionState = useLobbySynchronization({
@@ -99,6 +109,8 @@ export function PartySetup({
     const captionGraphemeLimit = Number(window.prompt("Caption limit (1-120)", String(round.caption_grapheme_limit)));
     if ([captioningSeconds, votingSeconds, captionGraphemeLimit].every(Number.isInteger)) void roundCommand({ action: "edit", roundId: round.round_id, captioningSeconds, votingSeconds, captionGraphemeLimit });
   }
+
+  async function captionCommand(body: Record<string, unknown>) { await roundCommand(body, "captions"); }
 
   return (
     <main className="broadcast-shell">
@@ -165,6 +177,7 @@ export function PartySetup({
             <div className="roster-list">{rounds.map((round, index) => <div className="roster-row" key={round.round_id}><div><strong>{round.name ?? "Started round"}</strong><span>{round.prompt ?? "No prompt"} · {round.captioning_seconds}s caption / {round.voting_seconds}s vote</span></div>{round.state === "pending" && <><button className="icon-button" type="button" disabled={busy || !canWrite} title="Edit round settings" onClick={() => void editRound(round)}><Pencil aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite || index === 0} title="Move round up" onClick={() => void roundCommand({ action: "reorder", roundId: round.round_id, position: index - 1 })}><ArrowUp aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite || index === rounds.length - 1} title="Move round down" onClick={() => void roundCommand({ action: "reorder", roundId: round.round_id, position: index + 1 })}><ArrowDown aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite} title="Duplicate round" onClick={() => void roundCommand({ action: "duplicate", roundId: round.round_id })}><Copy aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite} title="Delete round" onClick={() => { if (window.confirm("Delete this pending round?")) void roundCommand({ action: "delete", roundId: round.round_id }); }}><Trash2 aria-hidden="true" /></button></>}</div>)}</div>
             {party.game_session_state === "lobby" && <button className="broadcast-action" type="button" disabled={busy || !canWrite || !rounds.some((round) => round.state === "pending")} onClick={() => void roundCommand({}, "session/start")}>Start captioning</button>}
             {party.game_session_state === "live" && rounds.some((round) => round.state === "active") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void roundCommand({ paused: rounds.find((round) => round.state === "active")?.captioning_deadline !== null }, "session/pause")}>{rounds.find((round) => round.state === "active")?.captioning_deadline ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />} {rounds.find((round) => round.state === "active")?.captioning_deadline ? "Pause timer" : "Resume timer"}</button>}
+            {party.game_session_state === "live" && rounds.some((round) => round.phase === "captioning") && <><p>{completion?.submission_count ?? 0} of {completion?.eligible_count ?? 0} captions submitted</p><div className="roster-list">{submissions.map((submission) => <div className="roster-row" key={submission.submission_id}><div><strong>{submission.nickname}</strong><span>{submission.caption}</span></div><button className="icon-button" type="button" title={`Remove ${submission.nickname}'s caption`} disabled={busy || !canWrite} onClick={() => void captionCommand({ action: "remove", submissionId: submission.submission_id })}><Trash2 aria-hidden="true" /></button></div>)}</div><button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => { if (window.confirm("Close Captioning even if responses are missing?")) void captionCommand({ action: "close", confirmMissing: true }); }}>Close Captioning</button></>}
           </div>
         </section>
         <aside className="dashboard-rail">

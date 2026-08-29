@@ -1,6 +1,6 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import type { HostPictureCaptionTemplate, LobbyCommandResult, PictureCaptionRound } from "@/lib/supabase/database.types";
+import type { HostPictureCaptionTemplate, LobbyCommandResult, PictureCaptionCompletion, PictureCaptionRound, PictureCaptionSubmission } from "@/lib/supabase/database.types";
 
 export async function getHostPictureCaptionRounds(hostId: string, partyId: string): Promise<PictureCaptionRound[]> {
     const { data, error } = await createSupabaseAdminClient().rpc("host_picture_caption_rounds_projection", { p_host_id: hostId, p_party_id: partyId });
@@ -37,3 +37,8 @@ export async function setPictureCaptionPaused(command: { hostId: string; partyId
     if (!result) throw new Error("pause_failed");
     return result;
 }
+
+export async function getHostPictureCaptionSubmissions(hostId: string, partyId: string): Promise<PictureCaptionSubmission[]> { const { data, error } = await createSupabaseAdminClient().rpc("host_picture_caption_submissions_projection", { p_host_id: hostId, p_party_id: partyId }); if (error) throw new Error("caption_projection_unavailable", { cause: error }); return data; }
+export async function getHostPictureCaptionCompletion(hostId: string, partyId: string): Promise<PictureCaptionCompletion | null> { const { data, error } = await createSupabaseAdminClient().rpc("host_picture_caption_completion_projection", { p_host_id: hostId, p_party_id: partyId }); if (error) throw new Error("caption_projection_unavailable", { cause: error }); return data.at(0) ?? null; }
+export async function removePictureCaptionSubmission(command: { hostId: string; partyId: string; submissionId: string; commandId: string; expectedRevision: number }): Promise<LobbyCommandResult> { const { data, error } = await createSupabaseAdminClient().rpc("remove_picture_caption_submission", { p_host_id: command.hostId, p_party_id: command.partyId, p_submission_id: command.submissionId, p_command_id: command.commandId, p_expected_revision: command.expectedRevision }); if (error) throw new Error(error.code === "40001" ? "stale_revision" : "caption_removal_failed", { cause: error }); const result = data.at(0); if (!result) throw new Error("caption_removal_failed"); return result; }
+export async function closePictureCaptioning(command: { hostId: string; partyId: string; commandId: string; expectedRevision: number; confirmMissing: boolean }): Promise<LobbyCommandResult> { const { data, error } = await createSupabaseAdminClient().rpc("close_picture_captioning", { p_host_id: command.hostId, p_party_id: command.partyId, p_command_id: command.commandId, p_expected_revision: command.expectedRevision, p_confirm_missing: command.confirmMissing }); if (error) throw new Error(error.code === "40001" || error.message === "close_confirmation_required" ? error.message : "caption_close_failed", { cause: error }); const result = data.at(0); if (!result) throw new Error("caption_close_failed"); return result; }
