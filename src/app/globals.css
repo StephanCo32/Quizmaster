@@ -690,7 +690,6 @@ h1 {
 }
 
 .setup-panel {
-	max-width: 760px;
 	margin-top: 32px;
 }
 
@@ -698,6 +697,42 @@ h1 {
 	margin: 24px 0;
 	font-size: 18px;
 	line-height: 1.6;
+}
+
+.session-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 16px;
+}
+
+.session-actions .back-link {
+	margin: 0;
+}
+
+@media (min-width: 1000px) {
+	.setup-stage {
+		padding: 36px 48px 64px;
+	}
+
+	.dashboard-rail {
+		position: sticky;
+		top: 0;
+		height: 100svh;
+		overflow-y: auto;
+	}
+
+	.setup-panel {
+		max-width: none;
+	}
+
+	.setup-panel .roster-list {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.setup-panel .nickname-form {
+		margin-top: 24px;
+	}
 }
 
 .player-card,
@@ -924,6 +959,15 @@ h1 {
 	.party-code-header {
 		align-items: flex-start;
 		flex-direction: column;
+	}
+
+	.session-actions {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.session-actions .back-link {
+		margin-bottom: 0;
 	}
 
 	.broadcast-action {
