@@ -4,7 +4,7 @@ import { OpenLobbyButton } from "@/components/host/open-lobby-button";
 import { ArrowDown, ArrowLeft, ArrowUp, Copy, KeyRound, Pause, Pencil, Play, Plus, Radio, SlidersHorizontal, Trash2, UserRoundCheck, UserRoundX, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import type { HostPictureCaptionTemplate, PartyMemberProjection, PartyProjection, PictureCaptionCompletion, PictureCaptionRound, PictureCaptionSubmission } from "@/lib/supabase/database.types";
+import type { HostPictureCaptionBallot, HostPictureCaptionTemplate, PartyMemberProjection, PartyProjection, PictureCaptionCompletion, PictureCaptionRound, PictureCaptionSubmission } from "@/lib/supabase/database.types";
 import { canWriteLobby } from "@/lib/realtime/lobby-subscription";
 import { useLobbySynchronization } from "@/lib/realtime/use-lobby-synchronization";
 
@@ -15,6 +15,7 @@ export function PartySetup({
   templates: initialTemplates,
   initialSubmissions,
   initialCompletion,
+  initialBallots,
 }: {
   party: PartyProjection;
   roster: PartyMemberProjection[];
@@ -22,6 +23,7 @@ export function PartySetup({
   templates: HostPictureCaptionTemplate[];
   initialSubmissions: PictureCaptionSubmission[];
   initialCompletion: PictureCaptionCompletion | null;
+  initialBallots: HostPictureCaptionBallot[];
 }) {
   const [party, setParty] = useState(initialParty);
   const [roster, setRoster] = useState(initialRoster);
@@ -30,6 +32,7 @@ export function PartySetup({
   const [selectedTemplateId, setSelectedTemplateId] = useState(initialTemplates[0]?.template_id ?? "");
   const [submissions, setSubmissions] = useState(initialSubmissions);
   const [completion, setCompletion] = useState(initialCompletion);
+  const [ballots, setBallots] = useState(initialBallots);
   const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +56,9 @@ export function PartySetup({
     if (!captionsResponse.ok) throw new Error("caption_projection_unavailable");
     const captions = await captionsResponse.json() as { submissions: PictureCaptionSubmission[]; completion: PictureCaptionCompletion | null };
     setSubmissions(captions.submissions); setCompletion(captions.completion);
+    const ballotsResponse = await fetch(`/api/host/parties/${party.party_id}/ballots`, { cache: "no-store" });
+    if (!ballotsResponse.ok) throw new Error("ballot_projection_unavailable");
+    setBallots((await ballotsResponse.json() as { ballots: HostPictureCaptionBallot[] }).ballots);
   }
 
   const connectionState = useLobbySynchronization({
@@ -178,6 +184,7 @@ export function PartySetup({
             {party.game_session_state === "lobby" && <button className="broadcast-action" type="button" disabled={busy || !canWrite || !rounds.some((round) => round.state === "pending")} onClick={() => void roundCommand({}, "session/start")}>Start captioning</button>}
             {party.game_session_state === "live" && rounds.some((round) => round.state === "active") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void roundCommand({ paused: rounds.find((round) => round.state === "active")?.captioning_deadline !== null }, "session/pause")}>{rounds.find((round) => round.state === "active")?.captioning_deadline ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />} {rounds.find((round) => round.state === "active")?.captioning_deadline ? "Pause timer" : "Resume timer"}</button>}
             {party.game_session_state === "live" && rounds.some((round) => round.phase === "captioning") && <><p>{completion?.submission_count ?? 0} of {completion?.eligible_count ?? 0} captions submitted</p><div className="roster-list">{submissions.map((submission) => <div className="roster-row" key={submission.submission_id}><div><strong>{submission.nickname}</strong><span>{submission.caption}</span></div><button className="icon-button" type="button" title={`Remove ${submission.nickname}'s caption`} disabled={busy || !canWrite} onClick={() => void captionCommand({ action: "remove", submissionId: submission.submission_id })}><Trash2 aria-hidden="true" /></button></div>)}</div><button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => { if (window.confirm("Close Captioning even if responses are missing?")) void captionCommand({ action: "close", confirmMissing: true }); }}>Close Captioning</button></>}
+            {party.game_session_state === "live" && rounds.some((round) => round.phase === "voting") && <><p>{new Set(ballots.filter((ballot) => ballot.voter_nickname).map((ballot) => ballot.voter_nickname)).size} ballots received</p><div className="roster-list">{ballots.map((ballot) => <div className="roster-row" key={`${ballot.candidate_id}-${ballot.voter_nickname ?? "pending"}`}><div><strong>{ballot.caption}</strong><span>{ballot.voter_nickname ?? "No ballot yet"}</span></div><b>{ballot.points}</b></div>)}</div><button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => { if (window.confirm("Close Voting with missing ballots?")) void roundCommand({ confirmMissing: true }, "ballots"); }}>Close Voting</button></>}
           </div>
         </section>
         <aside className="dashboard-rail">

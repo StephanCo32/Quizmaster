@@ -6,23 +6,26 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { canWriteLobby } from "@/lib/realtime/lobby-subscription";
 import { useLobbySynchronization } from "@/lib/realtime/use-lobby-synchronization";
-import type { ActivePictureCaptionRound, PartyMemberProjection } from "@/lib/supabase/database.types";
+import type { ActivePictureCaptionRound, PartyMemberProjection, PictureCaptionCandidate } from "@/lib/supabase/database.types";
 
 export function PlayerLobby({
   partyCode,
   initialRoster,
   initialActiveRound,
   initialSubmission,
+  initialCandidates,
 }: {
   partyCode: string;
   initialRoster: PartyMemberProjection[];
   initialActiveRound: ActivePictureCaptionRound | null;
   initialSubmission: { caption: string } | null;
+  initialCandidates: PictureCaptionCandidate[];
 }) {
   const router = useRouter();
   const [roster, setRoster] = useState(initialRoster);
   const [activeRound, setActiveRound] = useState(initialActiveRound);
   const [caption, setCaption] = useState(initialSubmission?.caption ?? "");
+  const [candidates, setCandidates] = useState(initialCandidates);
   const [nickname, setNickname] = useState(initialRoster[0]?.nickname ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -79,6 +82,7 @@ export function PlayerLobby({
       roster: PartyMemberProjection[];
       activeRound: ActivePictureCaptionRound | null;
       submission: { caption: string } | null;
+      candidates: PictureCaptionCandidate[];
     };
     if (projection.canonicalCode !== partyCode) {
       router.replace(`/play/${projection.canonicalCode}`);
@@ -93,7 +97,10 @@ export function PlayerLobby({
     );
     setActiveRound(projection.activeRound);
     setCaption(projection.submission?.caption ?? "");
+    setCandidates(projection.candidates);
   }
+
+  async function castBallot(candidateId: string) { if (!canWrite) return; setBusy(true); setError(null); const response = await fetch(`/api/play/${partyCode}/ballot`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ commandId: crypto.randomUUID(), expectedRevision: revision, candidateId }) }); if (!response.ok) setError("Your ballot could not be saved."); else await refresh(); setBusy(false); }
 
   async function submitCaption(event: React.FormEvent) {
     event.preventDefault(); if (!activeRound || !canWrite) return;
@@ -144,6 +151,7 @@ export function PlayerLobby({
           )}
           {activeRound && <section className="broadcast-panel player-card"><Image src={`/api/play/${partyCode}/rounds/${activeRound.round_id}/picture`} alt="Picture caption round" width={640} height={360} unoptimized /><div><span className="rail-label">{activeRound.phase}{activeRound.paused_remaining_seconds !== null ? " paused" : ""}</span><h2>{activeRound.prompt ?? "Write a caption."}</h2><p>{activeRound.captioning_deadline ? `Ends ${new Date(activeRound.captioning_deadline).toLocaleTimeString()}` : `${activeRound.paused_remaining_seconds ?? 0} seconds remaining`}</p></div></section>}
           {activeRound?.phase === "captioning" && <form className="broadcast-panel nickname-form" onSubmit={submitCaption}><label>Caption<textarea required maxLength={1000} rows={3} value={caption} onChange={(event) => setCaption(event.target.value)} /></label><button className="broadcast-action" type="submit" disabled={busy || !canWrite || activeRound.captioning_deadline === null}>{initialSubmission ? "Update caption" : "Submit caption"}</button></form>}
+          {activeRound?.phase === "voting" && <section className="broadcast-panel"><h2>Choose a caption</h2><div className="roster-list">{candidates.map((candidate) => <button className="roster-row" type="button" key={candidate.candidate_id} disabled={busy || !canWrite || candidate.has_voted} onClick={() => void castBallot(candidate.candidate_id)}><span className="roster-color" style={{ backgroundColor: candidate.is_own ? candidate.own_color : "transparent" }} aria-label={candidate.is_own ? "Your caption" : undefined} /><strong>{candidate.caption}</strong></button>)}</div>{candidates[0]?.has_voted && <p>Ballot submitted. Waiting for the result.</p>}</section>}
           <div className="broadcast-panel player-card">
             <div
               className="player-color"
