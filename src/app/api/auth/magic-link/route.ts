@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { hostReturnPath } from "@/lib/host/return-path";
-import { contentAdminSecret } from "@/lib/env";
+import { appUrl, contentAdminSecret } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const requestSchema = z.object({
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         if (roleError || !isAdmin) return Response.json({ error: "invalid_admin_credentials" }, { status: 403 });
     }
 
-    const callbackUrl = new URL("/auth/callback", request.url);
+    const callbackUrl = new URL("/auth/callback", appUrl() ?? request.url);
     callbackUrl.searchParams.set("next", hostReturnPath(parsed.data.next));
 
     const supabase = await createSupabaseServerClient();

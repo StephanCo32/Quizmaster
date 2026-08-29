@@ -96,6 +96,7 @@ The protected `production` GitHub Environment must define:
 - `VERCEL_TOKEN`
 - `VERCEL_ORG_ID`
 - `VERCEL_PROJECT_ID`
+- `APP_URL` (the canonical production URL, for example `https://quizmaster-ebon-beta.vercel.app`)
 
 The release workflow verifies the tag, runs the full check, applies pending
 Supabase migrations, and deploys the exact commit to Vercel Frankfurt. Configure
