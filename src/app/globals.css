@@ -292,6 +292,12 @@ h1 {
 	cursor: pointer;
 }
 
+.icon-button:disabled,
+.back-link:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
 .dashboard-grid {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);

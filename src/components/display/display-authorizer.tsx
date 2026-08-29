@@ -2,10 +2,12 @@
 
 import { MonitorUp, Radio, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { PartyProjection } from "@/lib/supabase/database.types";
 
 export function DisplayAuthorizer({ parties }: { parties: PartyProjection[] }) {
+    const router = useRouter();
     const [busyPartyId, setBusyPartyId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +25,7 @@ export function DisplayAuthorizer({ parties }: { parties: PartyProjection[] }) {
             return;
         }
         const { partyCode } = await response.json() as { partyCode: string };
-        window.location.assign(`/display/${partyCode}`);
+        router.push(`/display/${partyCode}`);
     }
 
     async function revoke(partyId: string) {

@@ -20,7 +20,11 @@ export function DisplayOverview({ initialParty, initialRoster }: { initialParty:
             throw new Error("display_session_unavailable");
         }
         if (!response.ok) throw new Error("display_projection_unavailable");
-        const projection = await response.json() as { party: DisplayPartyProjection; roster: DisplayMemberProjection[] };
+        const projection = await response.json() as { canonicalCode: string; party: DisplayPartyProjection; roster: DisplayMemberProjection[] };
+        if (projection.canonicalCode !== party.party_code) {
+            router.replace(`/display/${projection.canonicalCode}`);
+            return;
+        }
         setParty(projection.party);
         setRoster(projection.roster);
     }

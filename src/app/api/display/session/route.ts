@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authorizeDisplaySession, displaySessionCookieName } from "@/lib/display/sessions";

@@ -74,6 +74,20 @@ as $$
     where display_session.id = p_display_session_id and display_session.revoked_at is null and party.code = upper(trim(p_party_code));
 $$;
 
+create function public.display_party_canonical_code(p_display_session_id uuid, p_party_code text)
+returns text
+language sql stable security definer set search_path = ''
+as $$
+        select party.code
+        from public.display_sessions as display_session
+        join public.parties as party on party.id = display_session.party_id
+        left join public.party_code_history as prior_code on prior_code.party_id = party.id
+        where display_session.id = p_display_session_id
+            and display_session.revoked_at is null
+            and (party.code = upper(trim(p_party_code)) or prior_code.code = upper(trim(p_party_code)))
+        limit 1;
+$$;
+
 create function public.display_party_lobby_projection(p_display_session_id uuid, p_party_code text)
 returns table (member_id uuid, nickname text, color text, score integer, ready boolean)
 language sql stable security definer set search_path = ''
@@ -91,10 +105,12 @@ revoke all on function public.host_party_projection(uuid, uuid) from public, ano
 revoke all on function public.authorize_display_session(uuid, uuid, uuid, uuid) from public, anon, authenticated;
 revoke all on function public.revoke_display_session(uuid, uuid) from public, anon, authenticated;
 revoke all on function public.display_party_projection(uuid, text) from public, anon, authenticated;
+revoke all on function public.display_party_canonical_code(uuid, text) from public, anon, authenticated;
 revoke all on function public.display_party_lobby_projection(uuid, text) from public, anon, authenticated;
 grant execute on function public.host_parties_projection(uuid) to service_role;
 grant execute on function public.host_party_projection(uuid, uuid) to service_role;
 grant execute on function public.authorize_display_session(uuid, uuid, uuid, uuid) to service_role;
 grant execute on function public.revoke_display_session(uuid, uuid) to service_role;
 grant execute on function public.display_party_projection(uuid, text) to service_role;
+grant execute on function public.display_party_canonical_code(uuid, text) to service_role;
 grant execute on function public.display_party_lobby_projection(uuid, text) to service_role;

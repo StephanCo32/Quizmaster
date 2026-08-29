@@ -52,4 +52,18 @@ describe("POST /api/play/join", () => {
         expect(response.status).toBe(409);
         expect(publishLobbyInvalidation).not.toHaveBeenCalled();
     });
+
+    it.each(["joining_closed", "player_removed", "party_not_found"])("does not disclose %s", async (reason) => {
+        joinParty.mockRejectedValue(new Error(reason));
+
+        const response = await POST(new Request("http://localhost/api/play/join", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(command),
+        }));
+
+        expect(response.status).toBe(404);
+        await expect(response.json()).resolves.toEqual({ error: "not_found" });
+        expect(publishLobbyInvalidation).not.toHaveBeenCalled();
+    });
 });

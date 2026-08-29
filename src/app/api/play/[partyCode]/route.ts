@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getPlayerId } from "@/lib/player/identity";
-import { changeNickname, getPlayerPartyLobby, setReady } from "@/lib/player/parties";
+import { changeNickname, getPlayerPartyCanonicalCode, getPlayerPartyLobby, setReady } from "@/lib/player/parties";
 import { publishLobbyInvalidation } from "@/lib/realtime/lobby-invalidation";
 
 const commandSchema = z.object({ commandId: z.string().uuid(), expectedRevision: z.number().int().nonnegative() });
@@ -12,7 +12,11 @@ export async function GET(_request: Request, context: { params: Promise<{ partyC
     const playerId = await getPlayerId();
     const { partyCode } = await context.params;
     if (!playerId) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    try { return NextResponse.json({ roster: await getPlayerPartyLobby(playerId, partyCode) }); }
+    try {
+        const canonicalCode = await getPlayerPartyCanonicalCode(playerId, partyCode);
+        if (!canonicalCode) return NextResponse.json({ error: "not_found" }, { status: 404 });
+        return NextResponse.json({ canonicalCode, roster: await getPlayerPartyLobby(playerId, canonicalCode) });
+    }
     catch { return NextResponse.json({ error: "not_found" }, { status: 404 }); }
 }
 

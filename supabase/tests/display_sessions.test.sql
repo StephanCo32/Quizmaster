@@ -2,7 +2,8 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 create temporary table tap_results (result text) on commit drop;
-insert into tap_results select plan(9);
+create temporary table rotated_party (old_code text) on commit drop;
+insert into tap_results select plan(12);
 
 insert into auth.users (id, email) values
     ('10101010-1010-4010-8010-101010101010', 'display-host@example.com'),
@@ -20,6 +21,9 @@ insert into tap_results select lives_ok($$select * from public.authorize_display
 insert into tap_results select is_empty($$select * from public.display_party_projection('80808080-8080-4080-8080-808080808080', (select code from public.parties limit 1))$$, 'replaced Display session loses authority');
 insert into tap_results select is((select count(*) from public.display_party_projection('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', (select code from public.parties limit 1))), 1::bigint, 'replacement Display session gains authority');
 insert into tap_results select is((select count(*) from public.display_sessions where revoked_at is null), 1::bigint, 'only one active Display session exists for a Party');
+insert into rotated_party select code from public.parties limit 1;
+insert into tap_results select lives_ok($$select * from public.rotate_party_code('10101010-1010-4010-8010-101010101010', (select id from public.parties limit 1), 'abababab-abab-4aba-8aba-abababababab', 2)$$, 'Host can rotate a Party code with an active Display');
+insert into tap_results select isnt((select public.display_party_canonical_code('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', old_code) from rotated_party), (select old_code from rotated_party), 'authorized Display resolves the rotated canonical Party code');
 insert into tap_results select is(public.revoke_display_session('10101010-1010-4010-8010-101010101010', (select id from public.parties limit 1)), true, 'Host can revoke the active Display session');
 insert into tap_results select is_empty($$select * from public.display_party_projection('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', (select code from public.parties limit 1))$$, 'revoked Display session loses authority');
 insert into tap_results select throws_ok($$select * from public.authorize_display_session('30303030-3030-4030-8030-303030303030', (select id from public.parties limit 1), 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc')$$, 'P0002', 'party_not_found', 'an unrelated Host cannot authorize a Display session');

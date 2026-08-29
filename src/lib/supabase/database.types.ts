@@ -84,6 +84,7 @@ export type Database = {
             authorize_display_session: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_display_session_id: string }; Returns: { party_code: string; game_session_id: string; session_revision: number }[] };
             revoke_display_session: { Args: { p_host_id: string; p_party_id: string }; Returns: boolean };
             display_party_projection: { Args: { p_display_session_id: string; p_party_code: string }; Returns: DisplayPartyProjection[] };
+            display_party_canonical_code: { Args: { p_display_session_id: string; p_party_code: string }; Returns: string };
             display_party_lobby_projection: { Args: { p_display_session_id: string; p_party_code: string }; Returns: DisplayMemberProjection[] };
             ensure_content_admin: { Args: { p_user_id: string }; Returns: boolean };
             content_admin_check: { Args: { p_user_id: string }; Returns: boolean };
@@ -105,6 +106,10 @@ export type Database = {
             picture_caption_templates_projection: { Args: { p_admin_id: string }; Returns: PictureCaptionTemplate[] };
             picture_caption_template_by_id: { Args: { p_template_id: string }; Returns: { template_id: string; picture_url: string }[] };
             open_party_lobby: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: LobbyCommandResult[] };
+            set_party_joining: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number; p_joining_open: boolean }; Returns: LobbyCommandResult[] };
+            set_party_member_access: { Args: { p_host_id: string; p_party_id: string; p_member_id: string; p_command_id: string; p_expected_revision: number; p_access_status: string }; Returns: LobbyCommandResult[] };
+            rotate_party_code: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: (LobbyCommandResult & { party_code: string })[] };
+            player_party_canonical_code: { Args: { p_player_id: string; p_party_code: string }; Returns: string };
             join_party: { Args: { p_player_id: string; p_party_code: string; p_nickname: string; p_command_id: string; p_expected_revision: number }; Returns: PartyMemberProjection[] };
             change_party_member_nickname: { Args: { p_player_id: string; p_member_id: string; p_command_id: string; p_nickname: string; p_expected_revision: number }; Returns: PartyMemberProjection[] };
             set_party_member_ready: { Args: { p_player_id: string; p_member_id: string; p_command_id: string; p_ready: boolean; p_expected_revision: number }; Returns: PartyMemberProjection[] };

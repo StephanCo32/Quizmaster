@@ -38,3 +38,9 @@ export async function getDisplayPartyLobby(displaySessionId: string, partyCode: 
     if (error) throw new Error("display_projection_unavailable", { cause: error });
     return data;
 }
+
+export async function getDisplayPartyCanonicalCode(displaySessionId: string, partyCode: string) {
+    const { data, error } = await createSupabaseAdminClient().rpc("display_party_canonical_code", { p_display_session_id: displaySessionId, p_party_code: partyCode });
+    if (error) throw new Error("display_projection_unavailable", { cause: error });
+    return data;
+}

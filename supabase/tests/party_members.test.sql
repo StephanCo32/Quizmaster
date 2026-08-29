@@ -3,7 +3,9 @@ begin;
 create extension if not exists pgtap with schema extensions;
 create temporary table tap_results (result text) on commit drop;
 create temporary table second_party (party_id uuid) on commit drop;
-insert into tap_results select plan(21);
+create temporary table rotated_party (party_id uuid, old_code text) on commit drop;
+create temporary table successor_session (game_session_id uuid) on commit drop;
+insert into tap_results select plan(34);
 
 insert into auth.users (id, email) values
     ('55555555-5555-4555-8555-555555555555', 'lobby-host@example.com'),
@@ -29,13 +31,34 @@ insert into tap_results select is((select revision from public.game_sessions lim
 insert into tap_results select is((select ready from public.party_members where player_id = '66666666-6666-4666-8666-666666666666'), true, 'readiness is persisted');
 insert into tap_results select is((select count(*) from public.player_party_lobby_projection('66666666-6666-4666-8666-666666666666', (select code from public.parties order by created_at limit 1))), 2::bigint, 'a Player can see the full Party roster');
 insert into tap_results select is((select game_session_id from public.player_party_lobby_projection('66666666-6666-4666-8666-666666666666', (select code from public.parties order by created_at limit 1)) limit 1), (select id from public.game_sessions order by created_at limit 1), 'Player projections expose synchronization identity');
+insert into tap_results select lives_ok($$select * from public.set_party_joining('55555555-5555-4555-8555-555555555555', (select id from public.parties order by created_at limit 1), '12121212-aaaa-4aaa-8aaa-121212121212', 5, false)$$, 'Host can close joining');
+insert into tap_results select throws_ok($$select * from public.join_party('55555555-5555-4555-8555-555555555555', (select code from public.parties order by created_at limit 1), 'Host', '13131313-aaaa-4aaa-8aaa-131313131313', 6)$$, '42501', 'joining_closed', 'closed admission rejects new Players');
+insert into tap_results select lives_ok($$select * from public.set_party_member_access('55555555-5555-4555-8555-555555555555', (select id from public.parties order by created_at limit 1), (select id from public.party_members where player_id = '66666666-6666-4666-8666-666666666666'), '14141414-aaaa-4aaa-8aaa-141414141414', 6, 'removed')$$, 'Host can remove a Player');
+insert into tap_results select throws_ok($$select * from public.join_party('66666666-6666-4666-8666-666666666666', (select code from public.parties order by created_at limit 1), 'Alice', '15151515-aaaa-4aaa-8aaa-151515151515', 7)$$, '42501', 'player_removed', 'removed Player cannot rejoin');
+insert into tap_results select lives_ok($$select * from public.set_party_member_access('55555555-5555-4555-8555-555555555555', (select id from public.parties order by created_at limit 1), (select id from public.party_members where player_id = '66666666-6666-4666-8666-666666666666'), '16161616-aaaa-4aaa-8aaa-161616161616', 7, 'joined')$$, 'Host can restore a Player');
+insert into rotated_party select id, code from public.parties order by created_at limit 1;
+insert into tap_results select isnt((select party_code from public.rotate_party_code('55555555-5555-4555-8555-555555555555', (select id from public.parties order by created_at limit 1), '17171717-aaaa-4aaa-8aaa-171717171717', 8)), (select code from public.parties order by created_at limit 1), 'Host can rotate the Party code');
+insert into tap_results select is((select public.player_party_canonical_code('66666666-6666-4666-8666-666666666666', old_code) from rotated_party), (select code from public.parties where id = (select party_id from rotated_party)), 'an admitted Player resolves a retired Party code');
+insert into tap_results select is_empty($$select public.party_lobby_status((select old_code from rotated_party))$$, 'a retired Party code is unavailable to new callers');
+insert into tap_results select lives_ok($$select * from public.set_party_joining('55555555-5555-4555-8555-555555555555', (select party_id from rotated_party), '18181818-aaaa-4aaa-8aaa-181818181818', 9, true)$$, 'the first concurrent admission command commits');
+insert into tap_results select throws_ok($$select * from public.set_party_joining('55555555-5555-4555-8555-555555555555', (select party_id from rotated_party), '19191919-aaaa-4aaa-8aaa-191919191919', 9, false)$$, '40001', 'stale_revision', 'a concurrent admission command is rejected');
 insert into tap_results select throws_ok($$select * from public.set_party_member_ready('66666666-6666-4666-8666-666666666666', (select id from public.party_members where player_id = '66666666-6666-4666-8666-666666666666'), 'aaaaaaaa-bbbb-4aaa-8aaa-aaaaaaaaaaaa', false, 0)$$, '40001', 'stale_revision', 'stale readiness commands are rejected');
 insert into second_party select party_id from public.create_party('55555555-5555-4555-8555-555555555555', 'bbbbbbbb-aaaa-4aaa-8aaa-bbbbbbbbbbbb', 0);
 select public.open_party_lobby('55555555-5555-4555-8555-555555555555', (select party_id from second_party), 'cccccccc-aaaa-4aaa-8aaa-cccccccccccc', 0);
 insert into tap_results select lives_ok($$select * from public.join_party('66666666-6666-4666-8666-666666666666', (select code from public.parties where id = (select party_id from second_party)), 'Alice', 'dddddddd-aaaa-4aaa-8aaa-dddddddddddd', 1)$$, 'the same Browser identity can join another Party');
 update public.game_sessions set joining_open = false where state = 'lobby';
-insert into tap_results select lives_ok($$select * from public.join_party('77777777-7777-4777-8777-777777777777', (select code from public.parties order by created_at limit 1), 'Bea', '66666666-aaaa-4aaa-8aaa-666666666666', 5)$$, 'an admitted player can rejoin after admission closes');
-insert into tap_results select throws_ok($$select * from public.join_party('55555555-5555-4555-8555-555555555555', (select code from public.parties order by created_at limit 1), 'Host', '77777777-aaaa-4aaa-8aaa-777777777777', 5)$$, '42501', 'joining_closed', 'new players cannot join after admission closes');
+insert into tap_results select lives_ok($$select * from public.join_party('77777777-7777-4777-8777-777777777777', (select code from public.parties order by created_at limit 1), 'Bea', '66666666-aaaa-4aaa-8aaa-666666666666', 10)$$, 'an admitted player can rejoin after admission closes');
+insert into tap_results select throws_ok($$select * from public.join_party('55555555-5555-4555-8555-555555555555', (select code from public.parties order by created_at limit 1), 'Host', '77777777-aaaa-4aaa-8aaa-777777777777', 10)$$, '42501', 'joining_closed', 'new players cannot join after admission closes');
+with inserted as (
+    insert into public.game_sessions (party_id, state, revision, joining_open)
+    values ((select party_id from rotated_party), 'lobby', 0, true)
+    returning id
+)
+insert into successor_session select id from inserted;
+update public.parties set current_game_session_id = (select game_session_id from successor_session) where id = (select party_id from rotated_party);
+insert into tap_results select lives_ok($$select * from public.set_party_member_access('55555555-5555-4555-8555-555555555555', (select party_id from rotated_party), (select id from public.party_members where player_id = '66666666-6666-4666-8666-666666666666' and party_id = (select party_id from rotated_party)), '88888888-bbbb-4aaa-8aaa-888888888888', 0, 'removed')$$, 'Host can remove a Player in a successor session');
+insert into tap_results select lives_ok($$select * from public.set_party_member_access('55555555-5555-4555-8555-555555555555', (select party_id from rotated_party), (select id from public.party_members where player_id = '66666666-6666-4666-8666-666666666666' and party_id = (select party_id from rotated_party)), '99999999-bbbb-4aaa-8aaa-999999999999', 1, 'joined')$$, 'Host can restore a Player in a successor session');
+insert into tap_results select is((select nickname from public.party_members where player_id = '66666666-6666-4666-8666-666666666666' and party_id = (select party_id from rotated_party)), 'Alice', 'restoration retains stable Player attributes');
 
 insert into tap_results select * from finish();
 do $$ declare failures text; begin select string_agg(result, E'\n') into failures from tap_results where result like 'not ok%'; if failures is not null then raise exception using message = failures; end if; end; $$;
