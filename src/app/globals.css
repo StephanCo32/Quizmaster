@@ -424,7 +424,7 @@ h1 {
 
 .party-row {
 	display: grid;
-	grid-template-columns: 54px minmax(0, 1fr) auto;
+	grid-template-columns: 88px minmax(0, 1fr) auto auto;
 	align-items: center;
 	gap: 16px;
 	min-height: 84px;
@@ -432,6 +432,15 @@ h1 {
 	background: var(--broadcast-panel);
 	border: 2px solid var(--broadcast-line);
 	border-left: 6px solid var(--broadcast-mint);
+}
+
+.template-thumbnail {
+	display: block;
+	width: 88px;
+	height: 64px;
+	object-fit: cover;
+	border: 2px solid var(--broadcast-paper);
+	border-radius: 3px;
 }
 
 .party-row:hover {
