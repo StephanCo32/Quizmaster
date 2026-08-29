@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 create temporary table tap_results (result text) on commit drop;
-insert into tap_results select plan(8);
+insert into tap_results select plan(10);
 
 insert into auth.users (id, email) values
     ('11111111-aaaa-4111-8111-111111111111', 'round-host@example.com'),
@@ -23,6 +23,8 @@ insert into tap_results select ok((select captioning_deadline is not null from p
 insert into tap_results select is((select joining_open from public.game_sessions limit 1), false, 'start closes new membership');
 insert into tap_results select lives_ok($$select * from public.set_picture_caption_paused('11111111-aaaa-4111-8111-111111111111', (select id from public.parties limit 1), 'bbbbbbbb-aaaa-4bbb-8bbb-bbbbbbbbbbbb', 5, true)$$, 'Host can pause the active Captioning timer');
 insert into tap_results select ok((select captioning_deadline is null and paused_remaining_seconds is not null from public.picture_caption_rounds limit 1), 'pause freezes the authoritative deadline');
+insert into tap_results select lives_ok($$select * from public.set_picture_caption_paused('11111111-aaaa-4111-8111-111111111111', (select id from public.parties limit 1), 'cccccccc-aaaa-4ccc-8ccc-cccccccccccc', 6, false)$$, 'Host can resume the active Captioning timer');
+insert into tap_results select ok((select captioning_deadline is not null and paused_remaining_seconds is null from public.picture_caption_rounds limit 1), 'resume restores the authoritative deadline');
 
 insert into tap_results select * from finish();
 do $$ declare failures text; begin select string_agg(result, E'\n') into failures from tap_results where result like 'not ok%'; if failures is not null then raise exception using message = failures; end if; end; $$;
