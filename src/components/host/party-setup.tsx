@@ -66,7 +66,7 @@ export function PartySetup({
     const restoring = member.access_status === "removed";
     if (!restoring && !window.confirm(`Remove ${member.nickname} from this Party?`)) return;
     setBusyMemberId(member.member_id);
-    await command({ memberId: member.member_id, accessStatus: restoring ? "joined" : "removed" });
+    await command({ action: "set-member-access", memberId: member.member_id, accessStatus: restoring ? "joined" : "removed" });
     setBusyMemberId(null);
   }
 
@@ -125,7 +125,7 @@ export function PartySetup({
               />
             )}
             {party.game_session_state === "lobby" && (
-              <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void command({ joiningOpen: !joiningOpen })}>
+              <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void command({ action: "set-joining", joiningOpen: !joiningOpen })}>
                 {joiningOpen ? "Close joining" : "Open joining"}
               </button>
             )}
