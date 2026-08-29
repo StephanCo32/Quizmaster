@@ -41,3 +41,19 @@ export async function getPictureCaptionTemplateSource(templateId: string) {
     if (error) throw new Error("template_source_failed", { cause: error });
     return data.at(0) ?? null;
 }
+
+export async function listContentAdminIds(adminId: string) {
+    const { data, error } = await createSupabaseAdminClient().rpc("content_admin_roles_projection", { p_admin_id: adminId });
+    if (error) throw new Error("content_admin_list_failed", { cause: error });
+    return data.map((role) => role.user_id);
+}
+
+export async function grantContentAdmin(actorId: string, targetId: string) {
+    const { error } = await createSupabaseAdminClient().rpc("grant_content_admin", { p_actor_id: actorId, p_target_id: targetId });
+    if (error) throw new Error(error.message === "not_content_admin" ? "not_content_admin" : "content_admin_grant_failed", { cause: error });
+}
+
+export async function revokeContentAdmin(actorId: string, targetId: string) {
+    const { error } = await createSupabaseAdminClient().rpc("revoke_content_admin", { p_actor_id: actorId, p_target_id: targetId });
+    if (error) throw new Error(error.message === "final_content_admin" ? "final_content_admin" : error.message === "not_content_admin" ? "not_content_admin" : "content_admin_revoke_failed", { cause: error });
+}

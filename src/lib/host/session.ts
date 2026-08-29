@@ -16,11 +16,15 @@ export async function getHost() {
 
 export async function getContentAdmin() {
     const host = await getHost();
-    if (!host || !host.email || !contentAdminEmails().includes(host.email.toLowerCase())) {
-        return null;
-    }
+    if (!host) return null;
 
     const admin = createSupabaseAdminClient();
-    await admin.rpc("ensure_content_admin", { p_user_id: host.id });
-    return host;
+    if (host.email && contentAdminEmails().includes(host.email.toLowerCase())) {
+        const { error } = await admin.rpc("ensure_content_admin", { p_user_id: host.id });
+        if (error) throw new Error("content_admin_bootstrap_failed", { cause: error });
+    }
+
+    const { data, error } = await admin.rpc("content_admin_check", { p_user_id: host.id });
+    if (error) throw new Error("content_admin_check_failed", { cause: error });
+    return data ? host : null;
 }
