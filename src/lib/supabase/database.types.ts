@@ -207,6 +207,10 @@ export type Database = {
             resolve_picture_caption_reveal: { Args: { p_game_session_id: string }; Returns: undefined };
             player_picture_caption_results_projection: { Args: { p_player_id: string; p_party_code: string }; Returns: PictureCaptionResult[] };
             display_picture_caption_results_projection: { Args: { p_display_session_id: string; p_party_code: string }; Returns: PictureCaptionResult[] };
+            finish_game_session: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: LobbyCommandResult[] };
+            adjust_party_score: { Args: { p_host_id: string; p_party_id: string; p_member_id: string; p_command_id: string; p_expected_revision: number; p_delta: number }; Returns: LobbyCommandResult[] };
+            create_successor_game_session: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: LobbyCommandResult[] };
+            delete_party: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: boolean };
         };
         Enums: Record<string, never>;
         CompositeTypes: Record<string, never>;
