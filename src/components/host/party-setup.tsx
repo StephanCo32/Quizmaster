@@ -68,6 +68,8 @@ export function PartySetup({
   });
   const canWrite = canWriteLobby(connectionState);
   const joiningOpen = roster.find((member) => member.joining_open !== undefined)?.joining_open ?? false;
+  const currentRoundIndex = rounds.findIndex((round) => round.state === "active");
+  const nextRoundIndex = rounds.findIndex((round) => round.state === "pending");
 
   async function command(body: Record<string, unknown>) {
     setBusy(true);
@@ -150,7 +152,7 @@ export function PartySetup({
                   : "Disconnected. Showing the last committed Lobby; Host writes are paused."}
             </div>
           )}
-          <div className="broadcast-panel setup-panel">
+          <div className="broadcast-panel setup-panel session-panel">
             <div className="panel-heading">
               <SlidersHorizontal aria-hidden="true" />
               <div>
@@ -163,35 +165,36 @@ export function PartySetup({
                 ? "This Party is ready for players to enter."
                 : "Players can now join this Lobby from their phones."}
             </p>
-            {party.game_session_state === "setup" && (
-              <OpenLobbyButton
-                partyId={party.party_id}
-                expectedRevision={party.revision}
-                disabled={!canWrite}
-                onOpened={refresh}
-              />
-            )}
-            {party.game_session_state === "lobby" && (
-              <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void command({ action: "set-joining", joiningOpen: !joiningOpen })}>
-                {joiningOpen ? "Close joining" : "Open joining"}
+            <div className="session-actions">
+              {party.game_session_state === "setup" && (
+                <OpenLobbyButton
+                  partyId={party.party_id}
+                  expectedRevision={party.revision}
+                  disabled={!canWrite}
+                  onOpened={refresh}
+                />
+              )}
+              {party.game_session_state === "lobby" && (
+                <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void command({ action: "set-joining", joiningOpen: !joiningOpen })}>
+                  {joiningOpen ? "Close joining" : "Open joining"}
+                </button>
+              )}
+              <button className="back-link" type="button" disabled={busy || !canWrite} onClick={() => void rotateCode()}>
+                <KeyRound aria-hidden="true" /> Rotate Party code
               </button>
-            )}
-            <button className="back-link" type="button" disabled={busy || !canWrite} onClick={() => void rotateCode()}>
-              <KeyRound aria-hidden="true" /> Rotate Party code
-            </button>
+            </div>
             {error && <div className="status-notice status-error" role="alert">{error}</div>}
           </div>
           <div className="broadcast-panel setup-panel">
             <div className="panel-heading"><SlidersHorizontal aria-hidden="true" /><div><span>Picture-caption rounds</span><h2>{rounds.filter((round) => round.state === "pending").length} Pending</h2></div></div>
             {(party.game_session_state === "setup" || party.game_session_state === "lobby" || (party.game_session_state === "live" && !rounds.some((round) => round.state === "active"))) && <div className="nickname-form"><select aria-label="Round template" value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>{templates.map((template) => <option key={template.template_id} value={template.template_id}>{template.name}</option>)}</select><button className="icon-button" disabled={busy || !canWrite || !selectedTemplateId} type="button" title="Add round" aria-label="Add round" onClick={() => void roundCommand({ action: "add", templateId: selectedTemplateId })}><Plus aria-hidden="true" /></button></div>}
-            <div className="roster-list">{rounds.map((round, index) => <div className="roster-row" key={round.round_id}><div><strong>{round.name ?? "Started round"}</strong><span>{round.prompt ?? "No prompt"} · {round.captioning_seconds}s caption / {round.voting_seconds}s vote</span></div>{round.state === "pending" && <><button className="icon-button" type="button" disabled={busy || !canWrite} title="Edit round settings" onClick={() => void editRound(round)}><Pencil aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite || index === 0} title="Move round up" onClick={() => void roundCommand({ action: "reorder", roundId: round.round_id, position: index - 1 })}><ArrowUp aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite || index === rounds.length - 1} title="Move round down" onClick={() => void roundCommand({ action: "reorder", roundId: round.round_id, position: index + 1 })}><ArrowDown aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite} title="Duplicate round" onClick={() => void roundCommand({ action: "duplicate", roundId: round.round_id })}><Copy aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite} title="Delete round" onClick={() => { if (window.confirm("Delete this pending round?")) void roundCommand({ action: "delete", roundId: round.round_id }); }}><Trash2 aria-hidden="true" /></button></>}</div>)}</div>
+            <div className="roster-list">{rounds.map((round, index) => <div className="roster-row" key={round.round_id}><div><div className="round-name"><strong>{round.name ?? "Started round"}</strong>{index === currentRoundIndex && <span className="round-state-badge round-state-current">Current</span>}{index === nextRoundIndex && <span className="round-state-badge">Next</span>}</div><span>{round.prompt ?? "No prompt"} · {round.captioning_seconds}s caption / {round.voting_seconds}s vote</span></div>{round.state === "pending" && <><button className="icon-button" type="button" disabled={busy || !canWrite} title="Edit round settings" onClick={() => void editRound(round)}><Pencil aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite || index === 0} title="Move round up" onClick={() => void roundCommand({ action: "reorder", roundId: round.round_id, position: index - 1 })}><ArrowUp aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite || index === rounds.length - 1} title="Move round down" onClick={() => void roundCommand({ action: "reorder", roundId: round.round_id, position: index + 1 })}><ArrowDown aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite} title="Duplicate round" onClick={() => void roundCommand({ action: "duplicate", roundId: round.round_id })}><Copy aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite} title="Delete round" onClick={() => { if (window.confirm("Delete this pending round?")) void roundCommand({ action: "delete", roundId: round.round_id }); }}><Trash2 aria-hidden="true" /></button></>}</div>)}</div>
             {party.game_session_state === "lobby" && <button className="broadcast-action" type="button" disabled={busy || !canWrite || !rounds.some((round) => round.state === "pending")} onClick={() => void roundCommand({}, "session/start")}>Start captioning</button>}
             {party.game_session_state === "live" && rounds.some((round) => round.state === "active") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void roundCommand({ paused: rounds.find((round) => round.state === "active")?.captioning_deadline !== null }, "session/pause")}>{rounds.find((round) => round.state === "active")?.captioning_deadline ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />} {rounds.find((round) => round.state === "active")?.captioning_deadline ? "Pause timer" : "Resume timer"}</button>}
             {party.game_session_state === "live" && rounds.some((round) => round.phase === "captioning") && <><p>{completion?.submission_count ?? 0} of {completion?.eligible_count ?? 0} captions submitted</p><div className="roster-list">{submissions.map((submission) => <div className="roster-row" key={submission.submission_id}><div><strong>{submission.nickname}</strong><span>{submission.caption}</span></div><button className="icon-button" type="button" title={`Remove ${submission.nickname}'s caption`} disabled={busy || !canWrite} onClick={() => void captionCommand({ action: "remove", submissionId: submission.submission_id })}><Trash2 aria-hidden="true" /></button></div>)}</div><button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => { if (window.confirm("Close Captioning even if responses are missing?")) void captionCommand({ action: "close", confirmMissing: true }); }}>Close Captioning</button></>}
             {party.game_session_state === "live" && rounds.some((round) => round.phase === "voting") && <><p>{new Set(ballots.filter((ballot) => ballot.voter_nickname).map((ballot) => ballot.voter_nickname)).size} ballots received</p><div className="roster-list">{ballots.map((ballot) => <div className="roster-row" key={`${ballot.candidate_id}-${ballot.voter_nickname ?? "pending"}`}><div><strong>{ballot.caption}</strong><span>{ballot.voter_nickname ?? "No ballot yet"}</span></div><b>{ballot.points}</b></div>)}</div><button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => { if (window.confirm("Close Voting with missing ballots?")) void roundCommand({ confirmMissing: true }, "ballots"); }}>Close Voting</button></>}
-            {party.game_session_state === "live" && rounds.some((round) => round.state === "completed") && !rounds.some((round) => round.phase === "revealing") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void roundCommand({ action: "start-reveal" }, "results")}>Start Reveal</button>}
             {party.game_session_state === "live" && rounds.some((round) => round.phase === "revealing") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void roundCommand({ action: "continue" }, "results")}>Continue</button>}
-            {party.game_session_state === "live" && !rounds.some((round) => round.state === "active") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "finish" })}>Finish Game session</button>}
+            {party.game_session_state === "live" && !rounds.some((round) => round.state === "active") && <div className="round-lifecycle-actions">{rounds.some((round) => round.state === "completed") && !rounds.some((round) => round.phase === "revealing") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void roundCommand({ action: "start-reveal" }, "results")}>Start Reveal</button>}<button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "finish" })}>Finish Game session</button></div>}
             {party.game_session_state === "finished" && <><p>Finished. Scores can be corrected before the next Game session.</p><div className="roster-list">{roster.filter((member) => member.access_status === "joined").map((member) => <div className="roster-row" key={`score-${member.member_id}`}><strong>{member.nickname}</strong><span>{member.score} points</span><button className="icon-button" type="button" title={`Subtract one point from ${member.nickname}`} disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "adjust", memberId: member.member_id, delta: -1 })}>-</button><button className="icon-button" type="button" title={`Add one point to ${member.nickname}`} disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "adjust", memberId: member.member_id, delta: 1 })}>+</button></div>)}</div><button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "successor" })}>Start next Game session</button></>}
           </div>
         </section>
