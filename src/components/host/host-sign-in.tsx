@@ -18,6 +18,7 @@ export function HostSignIn({
     const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
         callbackFailed ? "error" : initialStatus,
     );
+    const [adminLogin, setAdminLogin] = useState(false);
 
     async function requestMagicLink(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -30,6 +31,8 @@ export function HostSignIn({
             body: JSON.stringify({
                 email: formData.get("email"),
                 next: nextPath,
+                admin: adminLogin,
+                secret: formData.get("secret"),
             }),
         });
 
@@ -68,12 +71,15 @@ export function HostSignIn({
                         required
                         disabled={status === "sending" || status === "sent"}
                     />
+                    <label htmlFor="admin-secret">Content admin secret</label>
+                    <input id="admin-secret" name="secret" type="password" autoComplete="current-password" disabled={status === "sending" || status === "sent"} />
                     <button className="broadcast-action" type="submit" disabled={status === "sending" || status === "sent"}>
                         <Mail size={19} aria-hidden="true" />
-                        {status === "sending" ? "Sending link..." : status === "sent" ? "Link sent" : "Send magic link"}
+                        {status === "sending" ? "Sending link..." : status === "sent" ? "Link sent" : adminLogin ? "Send admin magic link" : "Send Host magic link"}
                     </button>
+                    <button className="back-link" type="button" disabled={status === "sending" || status === "sent"} onClick={() => setAdminLogin((current) => !current)}>{adminLogin ? "Use Host login" : "Use content admin login"}</button>
                     <div className={`status-notice status-${status}`} role="status" aria-live="polite">
-                        {status === "idle" && "The link signs in only this browser."}
+                        {status === "idle" && (adminLogin ? "Enter the content admin secret, then use the link in this browser." : "The link signs in only this browser.")}
                         {status === "sending" && "Requesting a secure sign-in link..."}
                         {status === "sent" && "Check your inbox. You can close this tab after opening the link."}
                         {status === "error" && "The link could not be issued or completed. Check the address and try again."}

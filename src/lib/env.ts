@@ -5,6 +5,7 @@ const environmentSchema = z.object({
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
     CONTENT_ADMIN_EMAILS: z.string().optional(),
+    CONTENT_ADMIN_SECRET: z.string().min(1).optional(),
 });
 
 export function parseEnvironment(environment: Record<string, unknown>) {
@@ -26,4 +27,8 @@ export function contentAdminEmails(environment: Record<string, unknown> = proces
         .split(",")
         .map((email) => email.trim().toLowerCase())
         .filter(Boolean);
+}
+
+export function contentAdminSecret(environment: Record<string, unknown> = process.env) {
+    return environmentSchema.parse(environment).CONTENT_ADMIN_SECRET ?? null;
 }
