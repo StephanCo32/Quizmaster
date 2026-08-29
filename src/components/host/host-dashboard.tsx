@@ -1,6 +1,6 @@
 "use client";
 
-import { CirclePlus, LibraryBig, LogOut, Radio, Settings2 } from "lucide-react";
+import { CirclePlus, LibraryBig, LogOut, Radio, Settings2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -23,6 +23,7 @@ export function HostDashboard({
 }: HostDashboardProps) {
     const router = useRouter();
     const [createStatus, setCreateStatus] = useState<"idle" | "creating" | "error">(initialCreateStatus);
+    const [deletingPartyId, setDeletingPartyId] = useState<string | null>(null);
 
     async function createParty() {
         setCreateStatus("creating");
@@ -42,6 +43,15 @@ export function HostDashboard({
 
         const party = (await response.json()) as { party_id: string };
         router.push(`/host/parties/${party.party_id}`);
+    }
+
+    async function deleteParty(party: PartyProjection) {
+        if (!window.confirm(`Permanently delete Party ${party.party_code} and all of its Game history?`)) return;
+        setDeletingPartyId(party.party_id);
+        const response = await fetch(`/api/host/parties/${party.party_id}/lifecycle`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "delete", commandId: crypto.randomUUID(), expectedRevision: party.revision }) });
+        setDeletingPartyId(null);
+        if (!response.ok) { setCreateStatus("error"); return; }
+        router.refresh();
     }
 
     return (
@@ -91,14 +101,15 @@ export function HostDashboard({
                     ) : (
                         <div className="party-list">
                             {parties.map((party, index) => (
-                                <Link className="party-row" href={`/host/parties/${party.party_id}`} key={party.party_id}>
+                                <div className="party-row" key={party.party_id}>
                                     <span className="party-index">{String(index + 1).padStart(2, "0")}</span>
                                     <div>
                                         <strong>Party {party.party_code}</strong>
                                         <span>{party.game_session_state} · Revision {party.revision}</span>
                                     </div>
-                                    <Settings2 aria-hidden="true" />
-                                </Link>
+                                    <Link className="icon-button" href={`/host/parties/${party.party_id}`} title={`Open Party ${party.party_code}`} aria-label={`Open Party ${party.party_code}`}><Settings2 aria-hidden="true" /></Link>
+                                    {party.game_session_state === "finished" && <button className="icon-button" type="button" disabled={deletingPartyId === party.party_id} onClick={() => void deleteParty(party)} title={`Delete Party ${party.party_code}`} aria-label={`Delete Party ${party.party_code}`}><Trash2 aria-hidden="true" /></button>}
+                                </div>
                             ))}
                         </div>
                     )}
