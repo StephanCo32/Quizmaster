@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import type { ActivePictureCaptionRound, DisplayMemberProjection, DisplayPartyProjection, PictureCaptionCompletion } from "@/lib/supabase/database.types";
+import type { ActivePictureCaptionRound, DisplayMemberProjection, DisplayPartyProjection, DisplayPictureCaptionCandidate, PictureCaptionCompletion } from "@/lib/supabase/database.types";
 
 export const displaySessionCookieName = "quizmaster_display_session";
 
@@ -52,3 +52,4 @@ export async function getDisplayPictureCaptionRound(displaySessionId: string, pa
 }
 
 export async function getDisplayPictureCaptionCompletion(displaySessionId: string, partyCode: string): Promise<PictureCaptionCompletion | null> { const { data, error } = await createSupabaseAdminClient().rpc("display_picture_caption_completion_projection", { p_display_session_id: displaySessionId, p_party_code: partyCode }); if (error) throw new Error("display_projection_unavailable", { cause: error }); return data.at(0) ?? null; }
+export async function getDisplayPictureCaptionCandidates(displaySessionId: string, partyCode: string): Promise<DisplayPictureCaptionCandidate[]> { const { data, error } = await createSupabaseAdminClient().rpc("display_picture_caption_candidates_projection", { p_display_session_id: displaySessionId, p_party_code: partyCode }); if (error) throw new Error("display_projection_unavailable", { cause: error }); return data; }

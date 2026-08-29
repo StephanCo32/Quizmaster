@@ -1,6 +1,6 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import type { ActivePictureCaptionRound, LobbyCommandResult, PartyMemberProjection } from "@/lib/supabase/database.types";
+import type { ActivePictureCaptionRound, LobbyCommandResult, PartyMemberProjection, PictureCaptionCandidate } from "@/lib/supabase/database.types";
 
 export async function joinParty(command: { playerId: string; commandId: string; partyCode: string; nickname: string; expectedRevision: number }): Promise<PartyMemberProjection> {
     const { data, error } = await createSupabaseAdminClient().rpc("join_party", { p_player_id: command.playerId, p_command_id: command.commandId, p_party_code: command.partyCode, p_nickname: command.nickname, p_expected_revision: command.expectedRevision });
@@ -58,6 +58,9 @@ export async function submitPictureCaption(command: { playerId: string; partyCod
     if (error) throw new Error(error.code === "40001" ? "stale_revision" : error.message === "invalid_caption" ? "invalid_caption" : "caption_submission_failed", { cause: error });
     const result = data.at(0); if (!result) throw new Error("caption_submission_failed"); return result;
 }
+
+export async function getPlayerPictureCaptionCandidates(playerId: string, partyCode: string): Promise<PictureCaptionCandidate[]> { const { data, error } = await createSupabaseAdminClient().rpc("player_picture_caption_candidates_projection", { p_player_id: playerId, p_party_code: partyCode }); if (error) throw new Error("player_projection_unavailable", { cause: error }); return data; }
+export async function castPictureCaptionBallot(command: { playerId: string; partyCode: string; commandId: string; expectedRevision: number; candidateId: string }): Promise<LobbyCommandResult> { const { data, error } = await createSupabaseAdminClient().rpc("cast_picture_caption_ballot", { p_player_id: command.playerId, p_party_code: command.partyCode, p_command_id: command.commandId, p_expected_revision: command.expectedRevision, p_candidate_id: command.candidateId }); if (error) throw new Error(error.message === "ballot_already_cast" || error.code === "40001" ? error.message : "ballot_failed", { cause: error }); const result = data.at(0); if (!result) throw new Error("ballot_failed"); return result; }
 
 export async function getHostPartyLobby(hostId: string, partyId: string): Promise<PartyMemberProjection[]> {
     const { data, error } = await createSupabaseAdminClient().rpc("host_party_lobby_projection", { p_host_id: hostId, p_party_id: partyId });

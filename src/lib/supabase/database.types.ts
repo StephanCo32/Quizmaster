@@ -109,6 +109,20 @@ export type PictureCaptionCompletion = {
     session_revision: number;
 };
 
+export type PictureCaptionCandidate = {
+    candidate_id: string;
+    caption: string;
+    display_position: number;
+    is_own: boolean;
+    own_color: string;
+    has_voted: boolean;
+    game_session_id: string;
+    session_revision: number;
+};
+
+export type DisplayPictureCaptionCandidate = Omit<PictureCaptionCandidate, "is_own" | "own_color" | "has_voted">;
+export type HostPictureCaptionBallot = { candidate_id: string; caption: string; display_position: number; points: number; voter_nickname: string | null; game_session_id: string; session_revision: number };
+
 export type Database = {
     public: {
         Tables: Record<string, never>;
@@ -182,6 +196,11 @@ export type Database = {
             host_picture_caption_completion_projection: { Args: { p_host_id: string; p_party_id: string }; Returns: PictureCaptionCompletion[] };
             display_picture_caption_completion_projection: { Args: { p_display_session_id: string; p_party_code: string }; Returns: PictureCaptionCompletion[] };
             close_picture_captioning: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number; p_confirm_missing: boolean }; Returns: LobbyCommandResult[] };
+            player_picture_caption_candidates_projection: { Args: { p_player_id: string; p_party_code: string }; Returns: PictureCaptionCandidate[] };
+            cast_picture_caption_ballot: { Args: { p_player_id: string; p_party_code: string; p_command_id: string; p_expected_revision: number; p_candidate_id: string }; Returns: LobbyCommandResult[] };
+            host_picture_caption_ballots_projection: { Args: { p_host_id: string; p_party_id: string }; Returns: HostPictureCaptionBallot[] };
+            display_picture_caption_candidates_projection: { Args: { p_display_session_id: string; p_party_code: string }; Returns: DisplayPictureCaptionCandidate[] };
+            close_picture_caption_voting: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number; p_confirm_missing: boolean }; Returns: LobbyCommandResult[] };
         };
         Enums: Record<string, never>;
         CompositeTypes: Record<string, never>;
