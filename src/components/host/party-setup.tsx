@@ -3,6 +3,7 @@
 import { OpenLobbyButton } from "@/components/host/open-lobby-button";
 import { ArrowDown, ArrowLeft, ArrowUp, Copy, KeyRound, Pause, Pencil, Play, Plus, Radio, SlidersHorizontal, Trash2, UserRoundX, WifiOff } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { HostPictureCaptionBallot, HostPictureCaptionTemplate, PartyMemberProjection, PartyProjection, PictureCaptionCompletion, PictureCaptionRound, PictureCaptionSubmission } from "@/lib/supabase/database.types";
 import { canWriteLobby } from "@/lib/realtime/lobby-subscription";
@@ -25,6 +26,7 @@ export function PartySetup({
   initialCompletion: PictureCaptionCompletion | null;
   initialBallots: HostPictureCaptionBallot[];
 }) {
+  const router = useRouter();
   const [party, setParty] = useState(initialParty);
   const [roster, setRoster] = useState(initialRoster);
   const [rounds, setRounds] = useState(initialRounds);
@@ -119,7 +121,14 @@ export function PartySetup({
   }
 
   async function captionCommand(body: Record<string, unknown>) { await roundCommand(body, "captions"); }
-  async function lifecycleCommand(body: Record<string, unknown>) { await roundCommand(body, "lifecycle"); }
+  async function lifecycleCommand(body: Record<string, unknown>) {
+    setBusy(true); setError(null);
+    const response = await fetch(`/api/host/parties/${party.party_id}/lifecycle`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ commandId: crypto.randomUUID(), expectedRevision: party.revision, ...body }) });
+    if (!response.ok) setError(response.status === 409 ? "The session changed. Refresh and try again." : "The lifecycle command could not be saved.");
+    else if (body.action === "close") router.push("/host");
+    else await refresh();
+    setBusy(false);
+  }
 
   return (
     <main className="broadcast-shell">
@@ -140,7 +149,7 @@ export function PartySetup({
           <p className="broadcast-kicker">Party control</p>
           <div className="party-code-header">
             <h1>{party.party_code}</h1>
-            {party.game_session_state !== "finished" && <button className="back-link" type="button" disabled={busy || !canWrite} onClick={() => { if (window.confirm("Close this Party now? Any active round will end immediately.")) void lifecycleCommand({ action: "close" }); }}>Close Party</button>}
+            {party.game_session_state !== "finished" && <button className="back-link" type="button" disabled={busy} onClick={() => { if (window.confirm("Close this Party now? Any active round will end immediately.")) void lifecycleCommand({ action: "close" }); }}>Close Party</button>}
           </div>
           {connectionState !== "connected" && (
             <div className="status-notice status-error" role="status">

@@ -1,12 +1,25 @@
 "use client";
 
-import { Radio, WifiOff } from "lucide-react";
+import { Clock3, Radio, UsersRound } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { canWriteLobby } from "@/lib/realtime/lobby-subscription";
 import { useLobbySynchronization } from "@/lib/realtime/use-lobby-synchronization";
 import type { ActivePictureCaptionRound, DisplayMemberProjection, DisplayPartyProjection, DisplayPictureCaptionCandidate, PictureCaptionCompletion, PictureCaptionResult } from "@/lib/supabase/database.types";
+
+type DisplayProjection = {
+    canonicalCode: string;
+    party: DisplayPartyProjection;
+    roster: DisplayMemberProjection[];
+    activeRound: ActivePictureCaptionRound | null;
+    completion: PictureCaptionCompletion | null;
+    candidates: DisplayPictureCaptionCandidate[];
+    results: PictureCaptionResult[];
+};
+
+const LOBBY_MEMBER_LIMIT = 8;
+const GAME_ITEM_LIMIT = 5;
 
 export function DisplayOverview({ initialParty, initialRoster, initialActiveRound, initialCompletion, initialCandidates, initialResults }: { initialParty: DisplayPartyProjection; initialRoster: DisplayMemberProjection[]; initialActiveRound: ActivePictureCaptionRound | null; initialCompletion: PictureCaptionCompletion | null; initialCandidates: DisplayPictureCaptionCandidate[]; initialResults: PictureCaptionResult[] }) {
     const router = useRouter();
@@ -16,7 +29,7 @@ export function DisplayOverview({ initialParty, initialRoster, initialActiveRoun
     const [completion, setCompletion] = useState(initialCompletion);
     const [candidates, setCandidates] = useState(initialCandidates);
     const [results, setResults] = useState(initialResults);
-    const connectionState = useLobbySynchronization({ gameSessionId: party.game_session_id, revision: party.session_revision, refetch: refresh });
+    const [now, setNow] = useState<number | null>(null);
 
     async function refresh() {
         const response = await fetch(`/api/display/${party.party_code}`, { cache: "no-store" });
@@ -25,7 +38,7 @@ export function DisplayOverview({ initialParty, initialRoster, initialActiveRoun
             throw new Error("display_session_unavailable");
         }
         if (!response.ok) throw new Error("display_projection_unavailable");
-        const projection = await response.json() as { canonicalCode: string; party: DisplayPartyProjection; roster: DisplayMemberProjection[]; activeRound: ActivePictureCaptionRound | null; completion: PictureCaptionCompletion | null; candidates: DisplayPictureCaptionCandidate[]; results: PictureCaptionResult[] };
+        const projection = await response.json() as DisplayProjection;
         if (projection.canonicalCode !== party.party_code) {
             router.replace(`/display/${projection.canonicalCode}`);
             return;
@@ -38,5 +51,42 @@ export function DisplayOverview({ initialParty, initialRoster, initialActiveRoun
         setResults(projection.results);
     }
 
-    return <main className="display-overview"><header className="display-overview-header"><span className="broadcast-brand"><span className="broadcast-mark">Q</span><span>Quizmaster</span></span><span className="signal-chip"><Radio size={16} /> Party {party.party_code}</span><span>{party.game_session_state}</span></header>{party.game_session_state === "finished" && <section className="display-scoreboard"><div><span className="broadcast-kicker">Intermission</span><h1>Game session complete</h1><span>Waiting for the next session.</span></div></section>}{activeRound && <section className="display-scoreboard"><Image src={`/api/display/${party.party_code}/rounds/${activeRound.round_id}/picture`} alt="Picture caption round" width={960} height={540} unoptimized /><div><span className="broadcast-kicker">{activeRound.phase}{activeRound.paused_remaining_seconds !== null ? " paused" : ""}</span><h1>{activeRound.prompt ?? "Write a caption."}</h1><span>{completion ? `${completion.submission_count} of ${completion.eligible_count} captions received` : "Waiting for captions"}</span></div></section>}{activeRound?.phase === "voting" && <section className="display-scoreboard"><div><span className="broadcast-kicker">Candidates</span>{candidates.map((candidate) => <p key={candidate.candidate_id}>{candidate.caption}</p>)}</div></section>}{activeRound?.phase === "results" && <section className="display-scoreboard"><div><span className="broadcast-kicker">Results</span>{results.map((result) => <p key={`${result.caption}-${result.author_nickname}`}><span className="roster-color" style={{ backgroundColor: result.author_color }} aria-hidden="true" /> {result.author_nickname}: {result.caption} ({result.points}){result.is_leader ? " Leader" : ""}</p>)}</div></section>}<section className="display-scoreboard"><div><span className="broadcast-kicker">Shared Lobby</span><h1>{roster.length} Players</h1></div><div className="display-connection" role="status">{canWriteLobby(connectionState) ? "Live" : <><WifiOff aria-hidden="true" /> {connectionState === "reconnecting" ? "Reconnecting" : "Disconnected"}</>}</div></section><section className="display-roster" aria-label="Player roster">{roster.map((member) => <article className="display-member" key={member.member_id}><span className="roster-color" style={{ backgroundColor: member.color }} aria-hidden="true" /><strong>{member.nickname}</strong><span>{member.ready ? "Ready" : "Waiting"}</span><b>{member.score}</b></article>)}</section></main>;
+    const connectionState = useLobbySynchronization({ gameSessionId: party.game_session_id, revision: party.session_revision, refetch: refresh });
+    const deadline = activeRound?.captioning_deadline ?? null;
+    const secondsRemaining = deadline && now !== null ? Math.max(0, Math.ceil((new Date(deadline).getTime() - now) / 1000)) : activeRound?.paused_remaining_seconds ?? null;
+    const refreshForCountdown = useEffectEvent(() => void refresh());
+    const readyCount = roster.filter((member) => member.ready).length;
+    const visibleRoster = roster.slice(0, LOBBY_MEMBER_LIMIT);
+    const hiddenRosterCount = roster.length - visibleRoster.length;
+    const visibleCandidates = candidates.slice(0, GAME_ITEM_LIMIT);
+    const hiddenCandidateCount = candidates.length - visibleCandidates.length;
+    const visibleResults = results.slice(0, GAME_ITEM_LIMIT);
+    const hiddenResultCount = results.length - visibleResults.length;
+
+    useEffect(() => {
+        if (!deadline) return;
+        const initialTimer = window.setTimeout(() => setNow(Date.now()), 0);
+        const timer = window.setInterval(() => setNow(Date.now()), 1000);
+        return () => { window.clearTimeout(initialTimer); window.clearInterval(timer); };
+    }, [deadline]);
+
+    useEffect(() => {
+        if (secondsRemaining !== 0) return;
+        const timer = window.setTimeout(refreshForCountdown, 0);
+        return () => window.clearTimeout(timer);
+    }, [secondsRemaining]);
+
+    const header = <header className="display-overview-header"><span className="broadcast-brand"><span className="broadcast-mark">Q</span><span>Quizmaster</span></span><span className="signal-chip"><Radio size={16} /> Party {party.party_code}</span><span className="display-live-state">{canWriteLobby(connectionState) ? "Live" : "Reconnecting"}</span></header>;
+
+    if (!activeRound && party.game_session_state !== "finished") {
+        return <main className="display-overview display-lobby-mode">{header}<section className="display-lobby-hero"><div><span className="broadcast-kicker">Lobby open</span><h1>Join the party</h1><p>Enter this code on your phone.</p></div><div className="display-party-code" aria-label={`Party code ${party.party_code}`}>{party.party_code}</div></section><section className="display-lobby-roster"><div className="display-lobby-summary"><UsersRound aria-hidden="true" /><div><span>{roster.length} Players</span><strong>{readyCount} ready</strong></div></div><div className="display-roster">{visibleRoster.map((member) => <div className="display-member" key={member.member_id}><span className="roster-color" style={{ backgroundColor: member.color }} aria-hidden="true" /><strong>{member.nickname}</strong><span>{member.ready ? "Ready" : "Joining"}</span></div>)}{hiddenRosterCount > 0 && <div className="display-member display-overflow"><strong>+{hiddenRosterCount}</strong><span>more Players</span></div>}</div></section></main>;
+    }
+
+    if (party.game_session_state === "finished") {
+        return <main className="display-overview display-lobby-mode">{header}<section className="display-lobby-hero"><div><span className="broadcast-kicker">Session complete</span><h1>That is a wrap.</h1><p>Waiting for the Host to start the next game.</p></div></section></main>;
+    }
+
+    if (!activeRound) return null;
+
+    return <main className="display-overview display-game-mode">{header}<section className="display-game-heading"><div><span className="broadcast-kicker">Picture-caption round</span><h1>{activeRound.phase === "voting" ? "Choose a caption" : activeRound.phase === "results" ? "Results" : activeRound.prompt ?? "Write a caption."}</h1></div>{secondsRemaining !== null && <div className="display-timer"><Clock3 aria-hidden="true" /><strong>{secondsRemaining}</strong><span>seconds</span></div>}</section>{activeRound.phase === "captioning" && <section className="display-caption-stage"><Image className="display-round-image" src={`/api/display/${party.party_code}/rounds/${activeRound.round_id}/picture`} alt="Picture caption round" width={1280} height={720} unoptimized /><div className="display-response-count"><span className="broadcast-kicker">Captions received</span><strong>{completion?.submission_count ?? 0}<small> / {completion?.eligible_count ?? 0}</small></strong></div></section>}{activeRound.phase === "voting" && <section className="display-candidate-stage">{visibleCandidates.map((candidate, index) => <article className="display-candidate" key={candidate.candidate_id}><span>{String(index + 1).padStart(2, "0")}</span><p>{candidate.caption}</p></article>)}{hiddenCandidateCount > 0 && <article className="display-candidate display-overflow"><strong>+{hiddenCandidateCount}</strong><span>more captions</span></article>}</section>}{activeRound.phase === "revealing" && <section className="display-waiting-stage"><span className="broadcast-kicker">Votes are in</span><h2>Get ready for the reveal.</h2></section>}{activeRound.phase === "results" && <section className="display-candidate-stage">{visibleResults.map((result) => <article className="display-candidate display-result" key={`${result.caption}-${result.author_nickname}`}><span className="roster-color" style={{ backgroundColor: result.author_color }} aria-hidden="true" /><div><strong>{result.author_nickname}</strong><p>{result.caption}</p></div><b>{result.points}</b></article>)}{hiddenResultCount > 0 && <article className="display-candidate display-overflow"><strong>+{hiddenResultCount}</strong><span>more results</span></article>}</section>}</main>;
 }

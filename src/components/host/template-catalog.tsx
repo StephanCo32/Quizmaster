@@ -27,7 +27,9 @@ export function TemplateCatalog({ initialTemplates }: { initialTemplates: Pictur
         if (!response.ok) { setError(response.status === 409 ? "This template changed elsewhere. Reload and try again." : "Template could not be saved."); setBusy(false); return; }
         const result = (await response.json()).template as PictureCaptionTemplate;
         setTemplates((current) => editing ? current.map((item) => item.template_id === result.template_id ? result : item) : [result, ...current]);
-        resetForm(); setBusy(false);
+        if (editing) resetForm();
+        else setForm({ name: "", pictureUrl: "", prompt: "" });
+        setBusy(false);
     }
 
     async function removeTemplate(template: PictureCaptionTemplate) {
