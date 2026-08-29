@@ -91,6 +91,24 @@ export type ActivePictureCaptionRound = {
 
 export type HostPictureCaptionTemplate = Pick<PictureCaptionTemplate, "template_id" | "name" | "prompt" | "revision">;
 
+export type PictureCaptionSubmission = {
+    submission_id: string;
+    member_id: string;
+    nickname: string;
+    caption: string;
+    submitted_at: string;
+    updated_at: string;
+    game_session_id: string;
+    session_revision: number;
+};
+
+export type PictureCaptionCompletion = {
+    eligible_count: number;
+    submission_count: number;
+    game_session_id: string;
+    session_revision: number;
+};
+
 export type Database = {
     public: {
         Tables: Record<string, never>;
@@ -157,6 +175,13 @@ export type Database = {
             host_picture_caption_round_picture: { Args: { p_host_id: string; p_party_id: string; p_round_id: string }; Returns: string | null };
             player_picture_caption_round_picture: { Args: { p_player_id: string; p_party_code: string; p_round_id: string }; Returns: string | null };
             display_picture_caption_round_picture: { Args: { p_display_session_id: string; p_party_code: string; p_round_id: string }; Returns: string | null };
+            submit_picture_caption: { Args: { p_player_id: string; p_party_code: string; p_command_id: string; p_expected_revision: number; p_caption: string }; Returns: LobbyCommandResult[] };
+            player_picture_caption_submission_projection: { Args: { p_player_id: string; p_party_code: string }; Returns: { caption: string; submitted_at: string; updated_at: string; game_session_id: string; session_revision: number }[] };
+            host_picture_caption_submissions_projection: { Args: { p_host_id: string; p_party_id: string }; Returns: PictureCaptionSubmission[] };
+            remove_picture_caption_submission: { Args: { p_host_id: string; p_party_id: string; p_submission_id: string; p_command_id: string; p_expected_revision: number }; Returns: LobbyCommandResult[] };
+            host_picture_caption_completion_projection: { Args: { p_host_id: string; p_party_id: string }; Returns: PictureCaptionCompletion[] };
+            display_picture_caption_completion_projection: { Args: { p_display_session_id: string; p_party_code: string }; Returns: PictureCaptionCompletion[] };
+            close_picture_captioning: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number; p_confirm_missing: boolean }; Returns: LobbyCommandResult[] };
         };
         Enums: Record<string, never>;
         CompositeTypes: Record<string, never>;

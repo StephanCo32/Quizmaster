@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { PartySetup } from "@/components/host/party-setup";
 import { getHostParty } from "@/lib/host/parties";
-import { getHostPictureCaptionRounds, getHostPictureCaptionTemplates } from "@/lib/host/rounds";
+import { getHostPictureCaptionCompletion, getHostPictureCaptionRounds, getHostPictureCaptionSubmissions, getHostPictureCaptionTemplates } from "@/lib/host/rounds";
 import { getHostPartyLobby } from "@/lib/player/parties";
 import { getHost } from "@/lib/host/session";
 
@@ -25,6 +25,6 @@ export default async function HostPartyPage({
         notFound();
     }
 
-    const [roster, rounds, templates] = await Promise.all([getHostPartyLobby(host.id, partyId), getHostPictureCaptionRounds(host.id, partyId), getHostPictureCaptionTemplates(host.id, partyId)]);
-    return <PartySetup party={party} roster={roster} rounds={rounds} templates={templates} />;
+    const [roster, rounds, templates, submissions, completion] = await Promise.all([getHostPartyLobby(host.id, partyId), getHostPictureCaptionRounds(host.id, partyId), getHostPictureCaptionTemplates(host.id, partyId), getHostPictureCaptionSubmissions(host.id, partyId), getHostPictureCaptionCompletion(host.id, partyId)]);
+    return <PartySetup party={party} roster={roster} rounds={rounds} templates={templates} initialSubmissions={submissions} initialCompletion={completion} />;
 }
