@@ -122,6 +122,7 @@ export type PictureCaptionCandidate = {
 
 export type DisplayPictureCaptionCandidate = Omit<PictureCaptionCandidate, "is_own" | "own_color" | "has_voted">;
 export type HostPictureCaptionBallot = { candidate_id: string; caption: string; display_position: number; points: number; voter_nickname: string | null; game_session_id: string; session_revision: number };
+export type PictureCaptionResult = { caption: string; points: number; is_leader: boolean; author_nickname: string; author_color: string; game_session_id: string; session_revision: number };
 
 export type Database = {
     public: {
@@ -203,6 +204,9 @@ export type Database = {
             close_picture_caption_voting: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number; p_confirm_missing: boolean }; Returns: LobbyCommandResult[] };
             start_picture_caption_reveal: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: LobbyCommandResult[] };
             continue_picture_caption_round: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: LobbyCommandResult[] };
+            resolve_picture_caption_reveal: { Args: { p_game_session_id: string }; Returns: undefined };
+            player_picture_caption_results_projection: { Args: { p_player_id: string; p_party_code: string }; Returns: PictureCaptionResult[] };
+            display_picture_caption_results_projection: { Args: { p_display_session_id: string; p_party_code: string }; Returns: PictureCaptionResult[] };
         };
         Enums: Record<string, never>;
         CompositeTypes: Record<string, never>;
