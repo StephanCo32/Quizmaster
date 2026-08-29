@@ -409,6 +409,18 @@ h1 {
 	margin-bottom: 32px;
 }
 
+.party-code-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	margin-bottom: 24px;
+}
+
+.party-code-header h1 {
+	margin-bottom: 0;
+}
+
 .dashboard-actions {
 	display: flex;
 	gap: 12px;
@@ -906,6 +918,11 @@ h1 {
 	}
 
 	.dashboard-title-row {
+		flex-direction: column;
+	}
+
+	.party-code-header {
+		align-items: flex-start;
 		flex-direction: column;
 	}
 
