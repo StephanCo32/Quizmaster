@@ -71,7 +71,7 @@ export type PictureCaptionRound = {
     captioning_seconds: number;
     voting_seconds: number;
     caption_grapheme_limit: number;
-    phase: "captioning" | "voting" | null;
+    phase: "captioning" | "voting" | "revealing" | "results" | null;
     captioning_deadline: string | null;
     paused_remaining_seconds: number | null;
     game_session_id: string;
@@ -81,7 +81,7 @@ export type PictureCaptionRound = {
 export type ActivePictureCaptionRound = {
     round_id: string;
     prompt: string | null;
-    phase: "captioning" | "voting" | null;
+    phase: "captioning" | "voting" | "revealing" | "results" | null;
     captioning_deadline: string | null;
     paused_remaining_seconds: number | null;
     caption_grapheme_limit: number;
@@ -201,6 +201,8 @@ export type Database = {
             host_picture_caption_ballots_projection: { Args: { p_host_id: string; p_party_id: string }; Returns: HostPictureCaptionBallot[] };
             display_picture_caption_candidates_projection: { Args: { p_display_session_id: string; p_party_code: string }; Returns: DisplayPictureCaptionCandidate[] };
             close_picture_caption_voting: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number; p_confirm_missing: boolean }; Returns: LobbyCommandResult[] };
+            start_picture_caption_reveal: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: LobbyCommandResult[] };
+            continue_picture_caption_round: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: LobbyCommandResult[] };
         };
         Enums: Record<string, never>;
         CompositeTypes: Record<string, never>;
