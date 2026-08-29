@@ -8,7 +8,10 @@ vi.mock("@/lib/supabase/server", () => ({
     })),
 }));
 
-vi.mock("@/lib/env", () => ({ contentAdminSecret: () => "correct-secret" }));
+vi.mock("@/lib/env", () => ({
+    appUrl: () => "https://quizmaster-ebon-beta.vercel.app",
+    contentAdminSecret: () => "correct-secret",
+}));
 
 import { POST } from "./route";
 
@@ -18,7 +21,7 @@ describe("POST /api/auth/magic-link", () => {
         signInWithOtp.mockResolvedValue({ error: null });
     });
 
-    it("sends a magic link with a validated local Host return", async () => {
+    it("sends a magic link with the canonical application callback URL", async () => {
         const request = new Request("https://quizmaster.test/api/auth/magic-link", {
             method: "POST",
             headers: { "content-type": "application/json" },
@@ -35,7 +38,7 @@ describe("POST /api/auth/magic-link", () => {
             email: "host@example.com",
             options: {
                 emailRedirectTo:
-                    "https://quizmaster.test/auth/callback?next=%2Fhost",
+                    "https://quizmaster-ebon-beta.vercel.app/auth/callback?next=%2Fhost",
             },
         });
     });
