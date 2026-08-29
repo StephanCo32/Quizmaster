@@ -2,6 +2,7 @@
 
 import { Check, Pencil, Radio, RefreshCw, WifiOff } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { canWriteLobby } from "@/lib/realtime/lobby-subscription";
 import { useLobbySynchronization } from "@/lib/realtime/use-lobby-synchronization";
 import type { PartyMemberProjection } from "@/lib/supabase/database.types";
@@ -13,6 +14,7 @@ export function PlayerLobby({
   partyCode: string;
   initialRoster: PartyMemberProjection[];
 }) {
+  const router = useRouter();
   const [roster, setRoster] = useState(initialRoster);
   const [nickname, setNickname] = useState(initialRoster[0]?.nickname ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +67,15 @@ export function PlayerLobby({
       cache: "no-store",
     });
     if (!response.ok) throw new Error("player_projection_unavailable");
-    const nextRoster = (await response.json()).roster as PartyMemberProjection[];
+    const projection = (await response.json()) as {
+      canonicalCode: string;
+      roster: PartyMemberProjection[];
+    };
+    if (projection.canonicalCode !== partyCode) {
+      router.replace(`/play/${projection.canonicalCode}`);
+      return;
+    }
+    const nextRoster = projection.roster;
     setRoster((currentRoster) =>
       (nextRoster[0]?.session_revision ?? 0) >=
       (currentRoster[0]?.session_revision ?? 0)

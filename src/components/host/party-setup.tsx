@@ -1,7 +1,7 @@
 "use client";
 
 import { OpenLobbyButton } from "@/components/host/open-lobby-button";
-import { ArrowLeft, Radio, SlidersHorizontal, WifiOff } from "lucide-react";
+import { ArrowLeft, KeyRound, Radio, SlidersHorizontal, UserRoundCheck, UserRoundX, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import type { PartyProjection } from "@/lib/supabase/database.types";
@@ -18,6 +18,9 @@ export function PartySetup({
 }) {
   const [party, setParty] = useState(initialParty);
   const [roster, setRoster] = useState(initialRoster);
+  const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function refresh() {
     const response = await fetch(`/api/host/parties/${party.party_id}/lobby`, {
@@ -38,6 +41,39 @@ export function PartySetup({
     refetch: refresh,
   });
   const canWrite = canWriteLobby(connectionState);
+  const joiningOpen = roster.find((member) => member.joining_open !== undefined)?.joining_open ?? false;
+
+  async function command(body: Record<string, unknown>) {
+    setBusy(true);
+    setError(null);
+    const response = await fetch(`/api/host/parties/${party.party_id}/lobby`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ commandId: crypto.randomUUID(), expectedRevision: party.revision, ...body }),
+    });
+    if (!response.ok) {
+      setError(response.status === 409 ? "The Lobby changed. Refresh and try again." : "The Host command could not be saved.");
+      setBusy(false);
+      return null;
+    }
+    const result = (await response.json()) as { partyCode?: string };
+    await refresh();
+    setBusy(false);
+    return result;
+  }
+
+  async function setMemberAccess(member: PartyMemberProjection) {
+    const restoring = member.access_status === "removed";
+    if (!restoring && !window.confirm(`Remove ${member.nickname} from this Party?`)) return;
+    setBusyMemberId(member.member_id);
+    await command({ action: "set-member-access", memberId: member.member_id, accessStatus: restoring ? "joined" : "removed" });
+    setBusyMemberId(null);
+  }
+
+  async function rotateCode() {
+    if (!window.confirm("Rotate this Party code? New callers will need the new code.")) return;
+    await command({ action: "rotate-code" });
+  }
 
   return (
     <main className="broadcast-shell">
@@ -88,6 +124,15 @@ export function PartySetup({
                 onOpened={refresh}
               />
             )}
+            {party.game_session_state === "lobby" && (
+              <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void command({ action: "set-joining", joiningOpen: !joiningOpen })}>
+                {joiningOpen ? "Close joining" : "Open joining"}
+              </button>
+            )}
+            <button className="back-link" type="button" disabled={busy || !canWrite} onClick={() => void rotateCode()}>
+              <KeyRound aria-hidden="true" /> Rotate Party code
+            </button>
+            {error && <div className="status-notice status-error" role="alert">{error}</div>}
           </div>
         </section>
         <aside className="dashboard-rail">
@@ -120,10 +165,20 @@ export function PartySetup({
                   <div>
                     <strong>{member.nickname}</strong>
                     <span>
-                      {member.ready ? "Ready" : "Waiting"} · Score{" "}
+                      {member.access_status === "removed" ? "Removed" : member.ready ? "Ready" : "Waiting"} · Score{" "}
                       {member.score}
                     </span>
                   </div>
+                  <button
+                    className="icon-button"
+                    type="button"
+                    disabled={busy || busyMemberId === member.member_id || !canWrite}
+                    onClick={() => void setMemberAccess(member)}
+                    title={member.access_status === "removed" ? `Restore ${member.nickname}` : `Remove ${member.nickname}`}
+                    aria-label={member.access_status === "removed" ? `Restore ${member.nickname}` : `Remove ${member.nickname}`}
+                  >
+                    {member.access_status === "removed" ? <UserRoundCheck aria-hidden="true" /> : <UserRoundX aria-hidden="true" />}
+                  </button>
                 </div>
               ))}
           </div>
