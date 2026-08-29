@@ -63,6 +63,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Start local Supabase for database tests
+        run: npx supabase start
       - run: npm run check
       - name: Apply pending Supabase migrations
         run: |
