@@ -1,6 +1,6 @@
 "use client";
 
-import { CirclePlus, LogOut, Radio, Settings2 } from "lucide-react";
+import { CirclePlus, LibraryBig, LogOut, Radio, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -69,10 +69,13 @@ export function HostDashboard({
                             <h1>Parties</h1>
                             <p>Choose a room or bring a new one online.</p>
                         </div>
-                        <button className="broadcast-action" type="button" onClick={createParty} disabled={createStatus === "creating" || connectionState === "disconnected"}>
-                            <CirclePlus aria-hidden="true" />
-                            {createStatus === "creating" ? "Creating..." : "Create Party"}
-                        </button>
+                        <div className="dashboard-actions">
+                            {isContentAdmin && <Link className="broadcast-action" href="/host/templates"><LibraryBig aria-hidden="true" /> Manage templates</Link>}
+                            <button className="broadcast-action" type="button" onClick={createParty} disabled={createStatus === "creating" || connectionState === "disconnected"}>
+                                <CirclePlus aria-hidden="true" />
+                                {createStatus === "creating" ? "Creating..." : "Create Party"}
+                            </button>
+                        </div>
                     </div>
                     {createStatus === "error" && (
                         <div className="status-notice status-error" role="alert">
@@ -112,7 +115,6 @@ export function HostDashboard({
                         <div><dt>Data authority</dt><dd>Server</dd></div>
                         <div><dt>Region</dt><dd>FRA1</dd></div>
                     </dl>
-                    {isContentAdmin && <Link className="rail-link" href="/host/templates">Picture-caption templates</Link>}
                     <div className={`connection-card connection-${connectionState}`}>
                         <span className="connection-light" aria-hidden="true" />
                         <div>
