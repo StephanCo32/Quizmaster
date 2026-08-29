@@ -1,10 +1,17 @@
+"use client";
+
 import { OpenLobbyButton } from "@/components/host/open-lobby-button";
 import { ArrowLeft, Radio, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { PartyProjection } from "@/lib/supabase/database.types";
 import type { PartyMemberProjection } from "@/lib/supabase/database.types";
+import { useLobbyInvalidation } from "@/lib/realtime/use-lobby-invalidation";
 
 export function PartySetup({ party, roster }: { party: PartyProjection; roster: PartyMemberProjection[] }) {
+    const router = useRouter();
+    useLobbyInvalidation({ gameSessionId: party.game_session_id, revision: party.revision, refetch: async () => router.refresh() });
+
     return (
         <main className="broadcast-shell">
             <header className="broadcast-header">

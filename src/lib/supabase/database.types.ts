@@ -32,10 +32,16 @@ export type PartyMemberProjection = {
     score: number;
     ready: boolean;
     access_status: "joined" | "removed";
+    game_session_id: string;
     party_code?: string;
     session_state?: "setup" | "lobby" | "live" | "finished";
     joining_open?: boolean;
-    session_revision?: number;
+    session_revision: number;
+};
+
+export type LobbyCommandResult = {
+    game_session_id: string;
+    session_revision: number;
 };
 
 export type Database = {
@@ -75,7 +81,7 @@ export type Database = {
             };
             picture_caption_templates_projection: { Args: { p_admin_id: string }; Returns: PictureCaptionTemplate[] };
             picture_caption_template_by_id: { Args: { p_template_id: string }; Returns: { template_id: string; picture_url: string }[] };
-            open_party_lobby: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: boolean };
+            open_party_lobby: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: LobbyCommandResult[] };
             join_party: { Args: { p_player_id: string; p_party_code: string; p_nickname: string; p_command_id: string; p_expected_revision: number }; Returns: PartyMemberProjection[] };
             change_party_member_nickname: { Args: { p_player_id: string; p_member_id: string; p_command_id: string; p_nickname: string; p_expected_revision: number }; Returns: PartyMemberProjection[] };
             set_party_member_ready: { Args: { p_player_id: string; p_member_id: string; p_command_id: string; p_ready: boolean; p_expected_revision: number }; Returns: PartyMemberProjection[] };

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getPlayerId } from "@/lib/player/identity";
 import { changeNickname, getPlayerPartyLobby, setReady } from "@/lib/player/parties";
+import { publishLobbyInvalidation } from "@/lib/realtime/lobby-invalidation";
 
 const commandSchema = z.object({ commandId: z.string().uuid(), expectedRevision: z.number().int().nonnegative() });
 const nicknameSchema = commandSchema.extend({ nickname: z.string().trim().min(1).max(30) });
@@ -24,8 +25,15 @@ export async function PATCH(request: Request, _context: { params: Promise<{ part
     const nickname = nicknameSchema.safeParse(body);
     const ready = readySchema.safeParse(body);
     try {
-        if (nickname.success) return NextResponse.json({ member: await changeNickname({ playerId, memberId: body.memberId, commandId: nickname.data.commandId, nickname: nickname.data.nickname, expectedRevision: nickname.data.expectedRevision }) });
-        if (ready.success) return NextResponse.json({ member: await setReady({ playerId, memberId: body.memberId, commandId: ready.data.commandId, ready: ready.data.ready, expectedRevision: ready.data.expectedRevision }) });
+        const member = nickname.success
+            ? await changeNickname({ playerId, memberId: body.memberId, commandId: nickname.data.commandId, nickname: nickname.data.nickname, expectedRevision: nickname.data.expectedRevision })
+            : ready.success
+                ? await setReady({ playerId, memberId: body.memberId, commandId: ready.data.commandId, ready: ready.data.ready, expectedRevision: ready.data.expectedRevision })
+                : null;
+        if (member) {
+            await publishLobbyInvalidation({ gameSessionId: member.game_session_id, revision: member.session_revision });
+            return NextResponse.json({ member });
+        }
         return NextResponse.json({ error: "invalid_request" }, { status: 400 });
     } catch (error) {
         const message = error instanceof Error ? error.message : "unavailable";

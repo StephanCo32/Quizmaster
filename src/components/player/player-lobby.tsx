@@ -2,6 +2,7 @@
 
 import { Check, Pencil, Radio, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { useLobbyInvalidation } from "@/lib/realtime/use-lobby-invalidation";
 import type { PartyMemberProjection } from "@/lib/supabase/database.types";
 
 export function PlayerLobby({ partyCode, initialRoster }: { partyCode: string; initialRoster: PartyMemberProjection[] }) {
@@ -11,6 +12,8 @@ export function PlayerLobby({ partyCode, initialRoster }: { partyCode: string; i
     const [busy, setBusy] = useState(false);
     const member = roster[0];
     const revision = member?.session_revision ?? 0;
+
+    useLobbyInvalidation({ gameSessionId: member?.game_session_id ?? "unavailable", revision, refetch: refresh });
 
     async function command(body: Record<string, unknown>) {
         if (!member) return;
