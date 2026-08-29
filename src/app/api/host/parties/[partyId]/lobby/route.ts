@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getHostParty } from "@/lib/host/parties";
 import { getHost } from "@/lib/host/session";
-import { getHostPartyLobby, openPartyLobby } from "@/lib/player/parties";
+import { getHostPartyLobby, openPartyLobby, rotatePartyCode, setPartyJoining, setPartyMemberAccess } from "@/lib/player/parties";
 import { publishLobbyInvalidation } from "@/lib/realtime/lobby-invalidation";
 
 const schema = z.object({ commandId: z.string().uuid(), expectedRevision: z.number().int().nonnegative() });
+const admissionSchema = schema.extend({ joiningOpen: z.boolean() });
+const membershipSchema = schema.extend({ memberId: z.string().uuid(), accessStatus: z.enum(["joined", "removed"]) });
 
 export async function GET(_request: Request, context: { params: Promise<{ partyId: string }> }) {
     const host = await getHost();
@@ -27,4 +29,20 @@ export async function POST(request: Request, context: { params: Promise<{ partyI
         return NextResponse.json({ opened: true });
     }
     catch (error) { const stale = error instanceof Error && error.message === "stale_revision"; return NextResponse.json({ error: stale ? "stale_revision" : "unavailable" }, { status: stale ? 409 : 503 }); }
+}
+
+export async function PATCH(request: Request, context: { params: Promise<{ partyId: string }> }) {
+    const host = await getHost();
+    if (!host) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const body = await request.json();
+    const { partyId } = await context.params;
+    const admission = admissionSchema.safeParse(body);
+    const membership = membershipSchema.safeParse(body);
+    const rotation = schema.safeParse(body);
+    try {
+        const result = admission.success ? await setPartyJoining({ hostId: host.id, partyId, ...admission.data }) : membership.success ? await setPartyMemberAccess({ hostId: host.id, partyId, ...membership.data }) : rotation.success ? await rotatePartyCode({ hostId: host.id, partyId, ...rotation.data }) : null;
+        if (!result) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+        await publishLobbyInvalidation({ gameSessionId: result.game_session_id, revision: result.session_revision });
+        return NextResponse.json({ updated: true });
+    } catch (error) { const stale = error instanceof Error && error.message === "stale_revision"; return NextResponse.json({ error: stale ? "stale_revision" : "unavailable" }, { status: stale ? 409 : 503 }); }
 }

@@ -38,6 +38,16 @@ export function PartySetup({
     refetch: refresh,
   });
   const canWrite = canWriteLobby(connectionState);
+  const joiningOpen = roster[0]?.joining_open ?? false;
+
+  async function setJoining(nextJoiningOpen: boolean) {
+    const response = await fetch(`/api/host/parties/${party.party_id}/lobby`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ commandId: crypto.randomUUID(), expectedRevision: party.revision, joiningOpen: nextJoiningOpen }),
+    });
+    if (response.ok) await refresh();
+  }
 
   return (
     <main className="broadcast-shell">
@@ -87,6 +97,11 @@ export function PartySetup({
                 disabled={!canWrite}
                 onOpened={refresh}
               />
+            )}
+            {party.game_session_state === "lobby" && (
+              <button className="broadcast-action" type="button" disabled={!canWrite} onClick={() => void setJoining(!joiningOpen)}>
+                {joiningOpen ? "Close joining" : "Open joining"}
+              </button>
             )}
           </div>
         </section>

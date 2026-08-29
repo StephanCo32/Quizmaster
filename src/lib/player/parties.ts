@@ -54,3 +54,27 @@ export async function openPartyLobby(command: { hostId: string; partyId: string;
     if (!result) throw new Error("lobby_open_failed");
     return result;
 }
+
+export async function setPartyJoining(command: { hostId: string; partyId: string; commandId: string; expectedRevision: number; joiningOpen: boolean }) {
+    const { data, error } = await createSupabaseAdminClient().rpc("set_party_joining", { p_host_id: command.hostId, p_party_id: command.partyId, p_command_id: command.commandId, p_expected_revision: command.expectedRevision, p_joining_open: command.joiningOpen });
+    if (error) throw new Error(error.code === "40001" ? "stale_revision" : "admission_change_failed", { cause: error });
+    const result = data.at(0);
+    if (!result) throw new Error("admission_change_failed");
+    return result;
+}
+
+export async function setPartyMemberAccess(command: { hostId: string; partyId: string; memberId: string; commandId: string; expectedRevision: number; accessStatus: "joined" | "removed" }) {
+    const { data, error } = await createSupabaseAdminClient().rpc("set_party_member_access", { p_host_id: command.hostId, p_party_id: command.partyId, p_member_id: command.memberId, p_command_id: command.commandId, p_expected_revision: command.expectedRevision, p_access_status: command.accessStatus });
+    if (error) throw new Error(error.code === "40001" ? "stale_revision" : "member_access_change_failed", { cause: error });
+    const result = data.at(0);
+    if (!result) throw new Error("member_access_change_failed");
+    return result;
+}
+
+export async function rotatePartyCode(command: { hostId: string; partyId: string; commandId: string; expectedRevision: number }) {
+    const { data, error } = await createSupabaseAdminClient().rpc("rotate_party_code", { p_host_id: command.hostId, p_party_id: command.partyId, p_command_id: command.commandId, p_expected_revision: command.expectedRevision });
+    if (error) throw new Error(error.code === "40001" ? "stale_revision" : "party_code_rotation_failed", { cause: error });
+    const result = data.at(0);
+    if (!result) throw new Error("party_code_rotation_failed");
+    return result;
+}
