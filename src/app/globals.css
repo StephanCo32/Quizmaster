@@ -409,6 +409,18 @@ h1 {
 	margin-bottom: 32px;
 }
 
+.party-code-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	margin-bottom: 24px;
+}
+
+.party-code-header h1 {
+	margin-bottom: 0;
+}
+
 .dashboard-actions {
 	display: flex;
 	gap: 12px;
@@ -476,6 +488,22 @@ h1 {
 .party-row strong,
 .party-row span {
 	display: block;
+}
+
+.party-code-link {
+	display: block;
+	width: fit-content;
+	color: var(--broadcast-mint);
+	font-size: 20px;
+	font-weight: 800;
+	text-decoration: underline;
+	text-decoration-color: var(--broadcast-pink);
+	text-decoration-thickness: 2px;
+	text-underline-offset: 4px;
+}
+
+.party-code-link:hover {
+	color: var(--broadcast-yellow);
 }
 
 .party-row strong {
@@ -890,6 +918,11 @@ h1 {
 	}
 
 	.dashboard-title-row {
+		flex-direction: column;
+	}
+
+	.party-code-header {
+		align-items: flex-start;
 		flex-direction: column;
 	}
 

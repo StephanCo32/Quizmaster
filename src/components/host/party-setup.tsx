@@ -136,7 +136,10 @@ export function PartySetup({
             <ArrowLeft size={18} /> All Parties
           </Link>
           <p className="broadcast-kicker">Party control</p>
-          <h1>{party.party_code}</h1>
+          <div className="party-code-header">
+            <h1>{party.party_code}</h1>
+            {party.game_session_state !== "finished" && <button className="back-link" type="button" disabled={busy || !canWrite} onClick={() => { if (window.confirm("Close this Party now? Any active round will end immediately.")) void lifecycleCommand({ action: "close" }); }}>Close Party</button>}
+          </div>
           {connectionState !== "connected" && (
             <div className="status-notice status-error" role="status">
               <WifiOff aria-hidden="true" />{" "}
@@ -190,7 +193,6 @@ export function PartySetup({
             {party.game_session_state === "live" && rounds.some((round) => round.phase === "revealing") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void roundCommand({ action: "continue" }, "results")}>Continue</button>}
             {party.game_session_state === "live" && !rounds.some((round) => round.state === "active") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "finish" })}>Finish Game session</button>}
             {party.game_session_state === "finished" && <><p>Finished. Scores can be corrected before the next Game session.</p><div className="roster-list">{roster.filter((member) => member.access_status === "joined").map((member) => <div className="roster-row" key={`score-${member.member_id}`}><strong>{member.nickname}</strong><span>{member.score} points</span><button className="icon-button" type="button" title={`Subtract one point from ${member.nickname}`} disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "adjust", memberId: member.member_id, delta: -1 })}>-</button><button className="icon-button" type="button" title={`Add one point to ${member.nickname}`} disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "adjust", memberId: member.member_id, delta: 1 })}>+</button></div>)}</div><button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void lifecycleCommand({ action: "successor" })}>Start next Game session</button></>}
-            <button className="back-link" type="button" disabled={busy || !canWrite} onClick={() => { if (window.confirm("Permanently delete this Party and all of its Game history?")) void lifecycleCommand({ action: "delete" }); }}>Delete Party</button>
           </div>
         </section>
         <aside className="dashboard-rail">
