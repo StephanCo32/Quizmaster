@@ -5,6 +5,22 @@ export type PartyProjection = {
     game_session_state: "setup" | "lobby" | "live" | "finished";
     revision: number;
     created_at: string;
+    display_active: boolean;
+};
+
+export type DisplayPartyProjection = {
+    party_code: string;
+    game_session_id: string;
+    game_session_state: "setup" | "lobby" | "live" | "finished";
+    session_revision: number;
+};
+
+export type DisplayMemberProjection = {
+    member_id: string;
+    nickname: string;
+    color: string;
+    score: number;
+    ready: boolean;
 };
 
 export type CreatePartyResult = {
@@ -65,6 +81,11 @@ export type Database = {
                 Args: { p_host_id: string; p_party_id: string };
                 Returns: PartyProjection[];
             };
+            authorize_display_session: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_display_session_id: string }; Returns: { party_code: string; game_session_id: string; session_revision: number }[] };
+            revoke_display_session: { Args: { p_host_id: string; p_party_id: string }; Returns: boolean };
+            display_party_projection: { Args: { p_display_session_id: string; p_party_code: string }; Returns: DisplayPartyProjection[] };
+            display_party_canonical_code: { Args: { p_display_session_id: string; p_party_code: string }; Returns: string };
+            display_party_lobby_projection: { Args: { p_display_session_id: string; p_party_code: string }; Returns: DisplayMemberProjection[] };
             ensure_content_admin: { Args: { p_user_id: string }; Returns: boolean };
             content_admin_check: { Args: { p_user_id: string }; Returns: boolean };
             grant_content_admin: { Args: { p_actor_id: string; p_target_id: string }; Returns: boolean };

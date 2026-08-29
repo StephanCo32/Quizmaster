@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
-
-import { RoleShell } from "@/components/role-shell";
+import { DisplayAuthorizer } from "@/components/display/display-authorizer";
+import { HostSignIn } from "@/components/host/host-sign-in";
+import { listHostParties } from "@/lib/host/parties";
+import { getHost } from "@/lib/host/session";
 
 export const metadata: Metadata = { title: "Display" };
 
-export default function DisplayPage() {
-    return (
-        <RoleShell
-            code="DISPLAY / 03"
-            eyebrow="The shared stage"
-            title="Public display"
-            description="Keep every player aligned with the current round and scoreboard."
-            status="Waiting for a session"
-        />
-    );
+export default async function DisplayPage() {
+    const host = await getHost();
+    if (!host) return <HostSignIn nextPath="/display" />;
+    return <DisplayAuthorizer parties={await listHostParties(host.id)} />;
 }
