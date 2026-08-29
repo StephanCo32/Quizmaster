@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PlayerLobby } from "@/components/player/player-lobby";
 import { getPlayerId } from "@/lib/player/identity";
-import { getPlayerPartyLobby } from "@/lib/player/parties";
+import { getPlayerPartyCanonicalCode, getPlayerPartyLobby } from "@/lib/player/parties";
 
 export const metadata: Metadata = { title: "Player Lobby" };
 
@@ -10,7 +10,10 @@ export default async function PlayerPartyPage({ params }: { params: Promise<{ pa
     const { partyCode } = await params;
     const playerId = await getPlayerId();
     if (!playerId) notFound();
-    const roster = await getPlayerPartyLobby(playerId, partyCode);
+    const canonicalCode = await getPlayerPartyCanonicalCode(playerId, partyCode);
+    if (!canonicalCode) notFound();
+    if (canonicalCode !== partyCode.toUpperCase()) redirect(`/play/${canonicalCode}`);
+    const roster = await getPlayerPartyLobby(playerId, canonicalCode);
     if (roster.length === 0) notFound();
-    return <PlayerLobby partyCode={partyCode.toUpperCase()} initialRoster={roster} />;
+    return <PlayerLobby partyCode={canonicalCode} initialRoster={roster} />;
 }

@@ -5,9 +5,10 @@ import { getHost } from "@/lib/host/session";
 import { getHostPartyLobby, openPartyLobby, rotatePartyCode, setPartyJoining, setPartyMemberAccess } from "@/lib/player/parties";
 import { publishLobbyInvalidation } from "@/lib/realtime/lobby-invalidation";
 
-const schema = z.object({ commandId: z.string().uuid(), expectedRevision: z.number().int().nonnegative() });
-const admissionSchema = schema.extend({ joiningOpen: z.boolean() });
-const membershipSchema = schema.extend({ memberId: z.string().uuid(), accessStatus: z.enum(["joined", "removed"]) });
+const commandSchema = z.object({ commandId: z.string().uuid(), expectedRevision: z.number().int().nonnegative() });
+const admissionSchema = commandSchema.extend({ joiningOpen: z.boolean() });
+const membershipSchema = commandSchema.extend({ memberId: z.string().uuid(), accessStatus: z.enum(["joined", "removed"]) });
+const rotationSchema = commandSchema.extend({ action: z.literal("rotate-code") });
 
 export async function GET(_request: Request, context: { params: Promise<{ partyId: string }> }) {
     const host = await getHost();
@@ -20,7 +21,7 @@ export async function GET(_request: Request, context: { params: Promise<{ partyI
 export async function POST(request: Request, context: { params: Promise<{ partyId: string }> }) {
     const host = await getHost();
     if (!host) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    const parsed = schema.safeParse(await request.json());
+    const parsed = commandSchema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
     const { partyId } = await context.params;
     try {
@@ -38,9 +39,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ party
     const { partyId } = await context.params;
     const admission = admissionSchema.safeParse(body);
     const membership = membershipSchema.safeParse(body);
-    const rotation = schema.safeParse(body);
+    const rotation = rotationSchema.safeParse(body);
     try {
-        const result = admission.success ? await setPartyJoining({ hostId: host.id, partyId, ...admission.data }) : membership.success ? await setPartyMemberAccess({ hostId: host.id, partyId, ...membership.data }) : rotation.success ? await rotatePartyCode({ hostId: host.id, partyId, ...rotation.data }) : null;
+        if (rotation.success) {
+            const result = await rotatePartyCode({ hostId: host.id, partyId, ...rotation.data });
+            await publishLobbyInvalidation({ gameSessionId: result.game_session_id, revision: result.session_revision });
+            return NextResponse.json({ partyCode: result.party_code });
+        }
+        const result = admission.success ? await setPartyJoining({ hostId: host.id, partyId, ...admission.data }) : membership.success ? await setPartyMemberAccess({ hostId: host.id, partyId, ...membership.data }) : null;
         if (!result) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
         await publishLobbyInvalidation({ gameSessionId: result.game_session_id, revision: result.session_revision });
         return NextResponse.json({ updated: true });

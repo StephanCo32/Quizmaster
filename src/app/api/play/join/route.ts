@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         return response;
     } catch (error) {
         const message = error instanceof Error ? error.message : "join_failed";
-        const status = message === "nickname_taken" || message === "stale_revision" ? 409 : message === "joining_closed" ? 403 : message === "party_not_found" ? 404 : 503;
-        return NextResponse.json({ error: ["nickname_taken", "stale_revision", "joining_closed", "party_not_found"].includes(message) ? message : "unavailable" }, { status });
+        const status = message === "nickname_taken" || message === "stale_revision" ? 409 : ["joining_closed", "party_not_found", "player_removed"].includes(message) ? 404 : 503;
+        return NextResponse.json({ error: message === "nickname_taken" || message === "stale_revision" ? message : status === 404 ? "not_found" : "unavailable" }, { status });
     }
 }

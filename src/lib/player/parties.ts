@@ -35,6 +35,12 @@ export async function getPlayerPartyLobby(playerId: string, partyCode: string): 
     return data;
 }
 
+export async function getPlayerPartyCanonicalCode(playerId: string, partyCode: string) {
+    const { data, error } = await createSupabaseAdminClient().rpc("player_party_canonical_code", { p_player_id: playerId, p_party_code: partyCode });
+    if (error) throw new Error("player_canonical_code_unavailable", { cause: error });
+    return data;
+}
+
 export async function getHostPartyLobby(hostId: string, partyId: string): Promise<PartyMemberProjection[]> {
     const { data, error } = await createSupabaseAdminClient().rpc("host_party_lobby_projection", { p_host_id: hostId, p_party_id: partyId });
     if (error) throw new Error("host_lobby_projection_unavailable", { cause: error });
