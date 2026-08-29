@@ -1,6 +1,6 @@
 "use client";
 
-import { CirclePlus, LibraryBig, LogOut, Radio, Settings2, Trash2 } from "lucide-react";
+import { CirclePlus, LibraryBig, LogOut, Radio, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -104,10 +104,9 @@ export function HostDashboard({
                                 <div className="party-row" key={party.party_id}>
                                     <span className="party-index">{String(index + 1).padStart(2, "0")}</span>
                                     <div>
-                                        <strong>Party {party.party_code}</strong>
+                                        <Link className="party-code-link" href={`/host/parties/${party.party_id}`}>Party {party.party_code}</Link>
                                         <span>{party.game_session_state} · Revision {party.revision}</span>
                                     </div>
-                                    <Link className="icon-button" href={`/host/parties/${party.party_id}`} title={`Open Party ${party.party_code}`} aria-label={`Open Party ${party.party_code}`}><Settings2 aria-hidden="true" /></Link>
                                     {party.game_session_state === "finished" && <button className="icon-button" type="button" disabled={deletingPartyId === party.party_id} onClick={() => void deleteParty(party)} title={`Delete Party ${party.party_code}`} aria-label={`Delete Party ${party.party_code}`}><Trash2 aria-hidden="true" /></button>}
                                 </div>
                             ))}

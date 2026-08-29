@@ -478,6 +478,22 @@ h1 {
 	display: block;
 }
 
+.party-code-link {
+	display: block;
+	width: fit-content;
+	color: var(--broadcast-mint);
+	font-size: 20px;
+	font-weight: 800;
+	text-decoration: underline;
+	text-decoration-color: var(--broadcast-pink);
+	text-decoration-thickness: 2px;
+	text-underline-offset: 4px;
+}
+
+.party-code-link:hover {
+	color: var(--broadcast-yellow);
+}
+
 .party-row strong {
 	font-size: 20px;
 }
