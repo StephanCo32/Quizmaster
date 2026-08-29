@@ -1,21 +1,25 @@
 "use client";
 
 import { Check, Pencil, Radio, RefreshCw, WifiOff } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { canWriteLobby } from "@/lib/realtime/lobby-subscription";
 import { useLobbySynchronization } from "@/lib/realtime/use-lobby-synchronization";
-import type { PartyMemberProjection } from "@/lib/supabase/database.types";
+import type { ActivePictureCaptionRound, PartyMemberProjection } from "@/lib/supabase/database.types";
 
 export function PlayerLobby({
   partyCode,
   initialRoster,
+  initialActiveRound,
 }: {
   partyCode: string;
   initialRoster: PartyMemberProjection[];
+  initialActiveRound: ActivePictureCaptionRound | null;
 }) {
   const router = useRouter();
   const [roster, setRoster] = useState(initialRoster);
+  const [activeRound, setActiveRound] = useState(initialActiveRound);
   const [nickname, setNickname] = useState(initialRoster[0]?.nickname ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -70,6 +74,7 @@ export function PlayerLobby({
     const projection = (await response.json()) as {
       canonicalCode: string;
       roster: PartyMemberProjection[];
+      activeRound: ActivePictureCaptionRound | null;
     };
     if (projection.canonicalCode !== partyCode) {
       router.replace(`/play/${projection.canonicalCode}`);
@@ -82,6 +87,7 @@ export function PlayerLobby({
         ? nextRoster
         : currentRoster,
     );
+    setActiveRound(projection.activeRound);
   }
 
   if (!member)
@@ -122,6 +128,7 @@ export function PlayerLobby({
                   : "Disconnected. Showing the last committed Lobby; Player writes are paused."}
             </div>
           )}
+          {activeRound && <section className="broadcast-panel player-card"><Image src={`/api/play/${partyCode}/rounds/${activeRound.round_id}/picture`} alt="Picture caption round" width={640} height={360} unoptimized /><div><span className="rail-label">{activeRound.phase}{activeRound.paused_remaining_seconds !== null ? " paused" : ""}</span><h2>{activeRound.prompt ?? "Write a caption."}</h2><p>{activeRound.captioning_deadline ? `Ends ${new Date(activeRound.captioning_deadline).toLocaleTimeString()}` : `${activeRound.paused_remaining_seconds ?? 0} seconds remaining`}</p></div></section>}
           <div className="broadcast-panel player-card">
             <div
               className="player-color"

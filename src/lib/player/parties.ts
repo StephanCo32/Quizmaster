@@ -1,6 +1,6 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import type { PartyMemberProjection } from "@/lib/supabase/database.types";
+import type { ActivePictureCaptionRound, PartyMemberProjection } from "@/lib/supabase/database.types";
 
 export async function joinParty(command: { playerId: string; commandId: string; partyCode: string; nickname: string; expectedRevision: number }): Promise<PartyMemberProjection> {
     const { data, error } = await createSupabaseAdminClient().rpc("join_party", { p_player_id: command.playerId, p_command_id: command.commandId, p_party_code: command.partyCode, p_nickname: command.nickname, p_expected_revision: command.expectedRevision });
@@ -39,6 +39,12 @@ export async function getPlayerPartyCanonicalCode(playerId: string, partyCode: s
     const { data, error } = await createSupabaseAdminClient().rpc("player_party_canonical_code", { p_player_id: playerId, p_party_code: partyCode });
     if (error) throw new Error("player_canonical_code_unavailable", { cause: error });
     return data;
+}
+
+export async function getPlayerPictureCaptionRound(playerId: string, partyCode: string): Promise<ActivePictureCaptionRound | null> {
+    const { data, error } = await createSupabaseAdminClient().rpc("player_picture_caption_round_projection", { p_player_id: playerId, p_party_code: partyCode });
+    if (error) throw new Error("player_projection_unavailable", { cause: error });
+    return data.at(0) ?? null;
 }
 
 export async function getHostPartyLobby(hostId: string, partyId: string): Promise<PartyMemberProjection[]> {

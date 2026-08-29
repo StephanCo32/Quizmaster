@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 create temporary table tap_results (result text) on commit drop;
-insert into tap_results select plan(10);
+insert into tap_results select plan(11);
 
 insert into auth.users (id, email) values
     ('11111111-aaaa-4111-8111-111111111111', 'round-host@example.com'),
@@ -25,6 +25,13 @@ insert into tap_results select lives_ok($$select * from public.set_picture_capti
 insert into tap_results select ok((select captioning_deadline is null and paused_remaining_seconds is not null from public.picture_caption_rounds limit 1), 'pause freezes the authoritative deadline');
 insert into tap_results select lives_ok($$select * from public.set_picture_caption_paused('11111111-aaaa-4111-8111-111111111111', (select id from public.parties limit 1), 'cccccccc-aaaa-4ccc-8ccc-cccccccccccc', 6, false)$$, 'Host can resume the active Captioning timer');
 insert into tap_results select ok((select captioning_deadline is not null and paused_remaining_seconds is null from public.picture_caption_rounds limit 1), 'resume restores the authoritative deadline');
+
+insert into auth.users (id, email) values ('dddddddd-aaaa-4ddd-8ddd-dddddddddddd', 'empty-host@example.com');
+insert into public.content_admin_roles (user_id) values ('dddddddd-aaaa-4ddd-8ddd-dddddddddddd');
+select public.create_party('dddddddd-aaaa-4ddd-8ddd-dddddddddddd', 'eeeeeeee-aaaa-4eee-8eee-eeeeeeeeeeee', 0);
+select public.open_party_lobby('dddddddd-aaaa-4ddd-8ddd-dddddddddddd', (select id from public.parties where host_id='dddddddd-aaaa-4ddd-8ddd-dddddddddddd'), 'ffffffff-aaaa-4fff-8fff-ffffffffffff', 0);
+select public.add_picture_caption_round('dddddddd-aaaa-4ddd-8ddd-dddddddddddd', (select id from public.parties where host_id='dddddddd-aaaa-4ddd-8ddd-dddddddddddd'), '33333333-aaaa-4333-8333-333333333333', '10101010-aaaa-4010-8010-101010101010', 1, 120, 90, 120);
+insert into tap_results select lives_ok($$select * from public.start_picture_caption_session('dddddddd-aaaa-4ddd-8ddd-dddddddddddd', (select id from public.parties where host_id='dddddddd-aaaa-4ddd-8ddd-dddddddddddd'), '20202020-aaaa-4020-8020-202020202020', 2)$$, 'Host can start with no Players');
 
 insert into tap_results select * from finish();
 do $$ declare failures text; begin select string_agg(result, E'\n') into failures from tap_results where result like 'not ok%'; if failures is not null then raise exception using message = failures; end if; end; $$;

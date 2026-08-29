@@ -1,23 +1,29 @@
 "use client";
 
 import { OpenLobbyButton } from "@/components/host/open-lobby-button";
-import { ArrowLeft, KeyRound, Radio, SlidersHorizontal, UserRoundCheck, UserRoundX, WifiOff } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Copy, KeyRound, Pause, Pencil, Play, Plus, Radio, SlidersHorizontal, Trash2, UserRoundCheck, UserRoundX, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import type { PartyProjection } from "@/lib/supabase/database.types";
-import type { PartyMemberProjection } from "@/lib/supabase/database.types";
+import type { HostPictureCaptionTemplate, PartyMemberProjection, PartyProjection, PictureCaptionRound } from "@/lib/supabase/database.types";
 import { canWriteLobby } from "@/lib/realtime/lobby-subscription";
 import { useLobbySynchronization } from "@/lib/realtime/use-lobby-synchronization";
 
 export function PartySetup({
   party: initialParty,
   roster: initialRoster,
+  rounds: initialRounds,
+  templates: initialTemplates,
 }: {
   party: PartyProjection;
   roster: PartyMemberProjection[];
+  rounds: PictureCaptionRound[];
+  templates: HostPictureCaptionTemplate[];
 }) {
   const [party, setParty] = useState(initialParty);
   const [roster, setRoster] = useState(initialRoster);
+  const [rounds, setRounds] = useState(initialRounds);
+  const [templates, setTemplates] = useState(initialTemplates);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(initialTemplates[0]?.template_id ?? "");
   const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +39,10 @@ export function PartySetup({
     };
     setParty(projection.party);
     setRoster(projection.roster);
+    const roundsResponse = await fetch(`/api/host/parties/${party.party_id}/rounds`, { cache: "no-store" });
+    if (!roundsResponse.ok) throw new Error("round_projection_unavailable");
+    const roundProjection = await roundsResponse.json() as { rounds: PictureCaptionRound[]; templates: HostPictureCaptionTemplate[] };
+    setRounds(roundProjection.rounds); setTemplates(roundProjection.templates);
   }
 
   const connectionState = useLobbySynchronization({
@@ -73,6 +83,21 @@ export function PartySetup({
   async function rotateCode() {
     if (!window.confirm("Rotate this Party code? New callers will need the new code.")) return;
     await command({ action: "rotate-code" });
+  }
+
+  async function roundCommand(body: Record<string, unknown>, path = "rounds") {
+    setBusy(true); setError(null);
+    const response = await fetch(`/api/host/parties/${party.party_id}/${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ commandId: crypto.randomUUID(), expectedRevision: party.revision, ...body }) });
+    if (!response.ok) setError(response.status === 409 ? "The session changed. Refresh and try again." : "The round command could not be saved.");
+    else await refresh();
+    setBusy(false);
+  }
+
+  async function editRound(round: PictureCaptionRound) {
+    const captioningSeconds = Number(window.prompt("Captioning seconds (5-600)", String(round.captioning_seconds)));
+    const votingSeconds = Number(window.prompt("Voting seconds (5-600)", String(round.voting_seconds)));
+    const captionGraphemeLimit = Number(window.prompt("Caption limit (1-120)", String(round.caption_grapheme_limit)));
+    if ([captioningSeconds, votingSeconds, captionGraphemeLimit].every(Number.isInteger)) void roundCommand({ action: "edit", roundId: round.round_id, captioningSeconds, votingSeconds, captionGraphemeLimit });
   }
 
   return (
@@ -133,6 +158,13 @@ export function PartySetup({
               <KeyRound aria-hidden="true" /> Rotate Party code
             </button>
             {error && <div className="status-notice status-error" role="alert">{error}</div>}
+          </div>
+          <div className="broadcast-panel setup-panel">
+            <div className="panel-heading"><SlidersHorizontal aria-hidden="true" /><div><span>Picture-caption rounds</span><h2>{rounds.filter((round) => round.state === "pending").length} Pending</h2></div></div>
+            {(party.game_session_state === "setup" || party.game_session_state === "lobby" || (party.game_session_state === "live" && !rounds.some((round) => round.state === "active"))) && <div className="nickname-form"><select aria-label="Round template" value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>{templates.map((template) => <option key={template.template_id} value={template.template_id}>{template.name}</option>)}</select><button className="icon-button" disabled={busy || !canWrite || !selectedTemplateId} type="button" title="Add round" aria-label="Add round" onClick={() => void roundCommand({ action: "add", templateId: selectedTemplateId })}><Plus aria-hidden="true" /></button></div>}
+            <div className="roster-list">{rounds.map((round, index) => <div className="roster-row" key={round.round_id}><div><strong>{round.name ?? "Started round"}</strong><span>{round.prompt ?? "No prompt"} · {round.captioning_seconds}s caption / {round.voting_seconds}s vote</span></div>{round.state === "pending" && <><button className="icon-button" type="button" disabled={busy || !canWrite} title="Edit round settings" onClick={() => void editRound(round)}><Pencil aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite || index === 0} title="Move round up" onClick={() => void roundCommand({ action: "reorder", roundId: round.round_id, position: index - 1 })}><ArrowUp aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite || index === rounds.length - 1} title="Move round down" onClick={() => void roundCommand({ action: "reorder", roundId: round.round_id, position: index + 1 })}><ArrowDown aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite} title="Duplicate round" onClick={() => void roundCommand({ action: "duplicate", roundId: round.round_id })}><Copy aria-hidden="true" /></button><button className="icon-button" type="button" disabled={busy || !canWrite} title="Delete round" onClick={() => { if (window.confirm("Delete this pending round?")) void roundCommand({ action: "delete", roundId: round.round_id }); }}><Trash2 aria-hidden="true" /></button></>}</div>)}</div>
+            {party.game_session_state === "lobby" && <button className="broadcast-action" type="button" disabled={busy || !canWrite || !rounds.some((round) => round.state === "pending")} onClick={() => void roundCommand({}, "session/start")}>Start captioning</button>}
+            {party.game_session_state === "live" && rounds.some((round) => round.state === "active") && <button className="broadcast-action" type="button" disabled={busy || !canWrite} onClick={() => void roundCommand({ paused: rounds.find((round) => round.state === "active")?.captioning_deadline !== null }, "session/pause")}>{rounds.find((round) => round.state === "active")?.captioning_deadline ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />} {rounds.find((round) => round.state === "active")?.captioning_deadline ? "Pause timer" : "Resume timer"}</button>}
           </div>
         </section>
         <aside className="dashboard-rail">
