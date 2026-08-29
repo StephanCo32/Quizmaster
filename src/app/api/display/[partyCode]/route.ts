@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDisplayParty, getDisplayPartyCanonicalCode, getDisplayPartyLobby, getDisplayPictureCaptionCandidates, getDisplayPictureCaptionCompletion, getDisplayPictureCaptionRound, getDisplaySessionId } from "@/lib/display/sessions";
+import { getDisplayParty, getDisplayPartyCanonicalCode, getDisplayPartyLobby, getDisplayPictureCaptionCandidates, getDisplayPictureCaptionCompletion, getDisplayPictureCaptionResults, getDisplayPictureCaptionRound, getDisplaySessionId } from "@/lib/display/sessions";
 
 export async function GET(_request: Request, context: { params: Promise<{ partyCode: string }> }) {
     const displaySessionId = await getDisplaySessionId();
@@ -10,8 +10,8 @@ export async function GET(_request: Request, context: { params: Promise<{ partyC
         if (!canonicalCode) return NextResponse.json({ error: "not_found" }, { status: 404 });
         const party = await getDisplayParty(displaySessionId, canonicalCode);
         if (!party) return NextResponse.json({ error: "not_found" }, { status: 404 });
-        const [roster, activeRound, completion, candidates] = await Promise.all([getDisplayPartyLobby(displaySessionId, canonicalCode), getDisplayPictureCaptionRound(displaySessionId, canonicalCode), getDisplayPictureCaptionCompletion(displaySessionId, canonicalCode), getDisplayPictureCaptionCandidates(displaySessionId, canonicalCode)]);
-        return NextResponse.json({ canonicalCode, party, roster, activeRound, completion, candidates });
+        const [roster, activeRound, completion, candidates, results] = await Promise.all([getDisplayPartyLobby(displaySessionId, canonicalCode), getDisplayPictureCaptionRound(displaySessionId, canonicalCode), getDisplayPictureCaptionCompletion(displaySessionId, canonicalCode), getDisplayPictureCaptionCandidates(displaySessionId, canonicalCode), getDisplayPictureCaptionResults(displaySessionId, canonicalCode)]);
+        return NextResponse.json({ canonicalCode, party, roster, activeRound, completion, candidates, results });
     } catch {
         return NextResponse.json({ error: "not_found" }, { status: 404 });
     }

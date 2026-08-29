@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { DisplayOverview } from "@/components/display/display-overview";
-import { getDisplayParty, getDisplayPartyCanonicalCode, getDisplayPartyLobby, getDisplayPictureCaptionCandidates, getDisplayPictureCaptionCompletion, getDisplayPictureCaptionRound, getDisplaySessionId } from "@/lib/display/sessions";
+import { getDisplayParty, getDisplayPartyCanonicalCode, getDisplayPartyLobby, getDisplayPictureCaptionCandidates, getDisplayPictureCaptionCompletion, getDisplayPictureCaptionResults, getDisplayPictureCaptionRound, getDisplaySessionId } from "@/lib/display/sessions";
 
 export default async function DisplayPartyPage({ params }: { params: Promise<{ partyCode: string }> }) {
     const { partyCode } = await params;
@@ -11,6 +11,6 @@ export default async function DisplayPartyPage({ params }: { params: Promise<{ p
     if (canonicalCode !== partyCode.toUpperCase()) redirect(`/display/${canonicalCode}`);
     const party = await getDisplayParty(displaySessionId, canonicalCode);
     if (!party) notFound();
-    const [roster, activeRound, completion, candidates] = await Promise.all([getDisplayPartyLobby(displaySessionId, canonicalCode), getDisplayPictureCaptionRound(displaySessionId, canonicalCode), getDisplayPictureCaptionCompletion(displaySessionId, canonicalCode), getDisplayPictureCaptionCandidates(displaySessionId, canonicalCode)]);
-    return <DisplayOverview initialParty={party} initialRoster={roster} initialActiveRound={activeRound} initialCompletion={completion} initialCandidates={candidates} />;
+    const [roster, activeRound, completion, candidates, results] = await Promise.all([getDisplayPartyLobby(displaySessionId, canonicalCode), getDisplayPictureCaptionRound(displaySessionId, canonicalCode), getDisplayPictureCaptionCompletion(displaySessionId, canonicalCode), getDisplayPictureCaptionCandidates(displaySessionId, canonicalCode), getDisplayPictureCaptionResults(displaySessionId, canonicalCode)]);
+    return <DisplayOverview initialParty={party} initialRoster={roster} initialActiveRound={activeRound} initialCompletion={completion} initialCandidates={candidates} initialResults={results} />;
 }
