@@ -9,6 +9,7 @@ import type { PartyProjection } from "@/lib/supabase/database.types";
 type HostDashboardProps = {
     hostEmail: string;
     parties: PartyProjection[];
+    isContentAdmin?: boolean;
     connectionState?: "connected" | "disconnected";
     initialCreateStatus?: "idle" | "creating" | "error";
 };
@@ -16,6 +17,7 @@ type HostDashboardProps = {
 export function HostDashboard({
     hostEmail,
     parties,
+    isContentAdmin = false,
     connectionState = "connected",
     initialCreateStatus = "idle",
 }: HostDashboardProps) {
@@ -110,7 +112,7 @@ export function HostDashboard({
                         <div><dt>Data authority</dt><dd>Server</dd></div>
                         <div><dt>Region</dt><dd>FRA1</dd></div>
                     </dl>
-                    <Link className="rail-link" href="/host/templates">Picture-caption templates</Link>
+                    {isContentAdmin && <Link className="rail-link" href="/host/templates">Picture-caption templates</Link>}
                     <div className={`connection-card connection-${connectionState}`}>
                         <span className="connection-light" aria-hidden="true" />
                         <div>
