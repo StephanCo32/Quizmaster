@@ -14,6 +14,7 @@ const meta = {
             game_session_state: "setup",
             revision: 0,
             created_at: "2026-08-23T18:00:00.000Z",
+            display_active: false,
         },
     },
 } satisfies Meta<typeof PartySetup>;

@@ -9,6 +9,7 @@ const parties = [
         game_session_state: "setup" as const,
         revision: 0,
         created_at: "2026-08-23T18:00:00.000Z",
+        display_active: false,
     },
 ];
 
