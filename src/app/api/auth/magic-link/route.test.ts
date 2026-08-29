@@ -8,6 +8,8 @@ vi.mock("@/lib/supabase/server", () => ({
     })),
 }));
 
+vi.mock("@/lib/env", () => ({ contentAdminSecret: () => "correct-secret" }));
+
 import { POST } from "./route";
 
 describe("POST /api/auth/magic-link", () => {
@@ -36,5 +38,17 @@ describe("POST /api/auth/magic-link", () => {
                     "https://quizmaster.test/auth/callback?next=%2Fhost",
             },
         });
+    });
+
+    it("rejects an admin login with an invalid secret", async () => {
+        const response = await POST(new Request("https://quizmaster.test/api/auth/magic-link", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email: "admin@example.com", admin: true, secret: "wrong-secret" }),
+        }));
+
+        expect(response.status).toBe(403);
+        await expect(response.json()).resolves.toEqual({ error: "invalid_admin_credentials" });
+        expect(signInWithOtp).not.toHaveBeenCalled();
     });
 });
