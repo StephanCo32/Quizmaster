@@ -70,6 +70,10 @@ jobs:
         run: |
           npx supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
           npx supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+      - name: Apply production Supabase configuration
+        run: |
+          cp supabase/config.production.toml supabase/config.toml
+          npx supabase config push --project-ref "$SUPABASE_PROJECT_ID"
       - name: Build exact release commit
         run: |
           npx --yes vercel@59.4.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
