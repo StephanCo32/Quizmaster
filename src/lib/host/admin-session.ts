@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { contentAdminSecret } from "@/lib/env";
 
-const COOKIE_NAME = "__Host-quizmaster-admin-session";
+const COOKIE_NAME = "quizmaster-admin-session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 
 type AdminSession = {
