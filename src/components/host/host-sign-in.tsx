@@ -2,7 +2,6 @@
 
 import { Mail, Radio } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 type HostSignInProps = {
@@ -16,7 +15,6 @@ export function HostSignIn({
     callbackFailed = false,
     initialStatus = "idle",
 }: HostSignInProps) {
-    const router = useRouter();
     const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
         callbackFailed ? "error" : initialStatus,
     );
@@ -44,7 +42,7 @@ export function HostSignIn({
         }
 
         setStatus("sent");
-        if (adminLogin) router.push(nextPath);
+        if (adminLogin) window.location.assign(nextPath);
     }
 
     return (
