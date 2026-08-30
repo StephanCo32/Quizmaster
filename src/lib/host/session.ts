@@ -1,8 +1,19 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getAdminSession } from "@/lib/host/admin-session";
 
-export async function getHost() {
+type Host = {
+    id: string;
+    email: string | undefined;
+};
+
+export async function getHost(): Promise<Host | null> {
+    const adminSession = await getAdminSession();
+    if (adminSession) {
+        return { id: adminSession.userId, email: adminSession.email };
+    }
+
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser();
 
@@ -10,7 +21,7 @@ export async function getHost() {
         return null;
     }
 
-    return data.user;
+    return { id: data.user.id, email: data.user.email };
 }
 
 export async function getContentAdmin() {

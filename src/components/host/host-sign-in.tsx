@@ -2,6 +2,7 @@
 
 import { Mail, Radio } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 type HostSignInProps = {
@@ -15,6 +16,7 @@ export function HostSignIn({
     callbackFailed = false,
     initialStatus = "idle",
 }: HostSignInProps) {
+    const router = useRouter();
     const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
         callbackFailed ? "error" : initialStatus,
     );
@@ -36,7 +38,13 @@ export function HostSignIn({
             }),
         });
 
-        setStatus(response.ok ? "sent" : "error");
+        if (!response.ok) {
+            setStatus("error");
+            return;
+        }
+
+        setStatus("sent");
+        if (adminLogin) router.push(nextPath);
     }
 
     return (
@@ -59,7 +67,7 @@ export function HostSignIn({
                         <Mail aria-hidden="true" />
                         <div>
                             <span>Secure access</span>
-                            <h2>Email magic link</h2>
+                            <h2>{adminLogin ? "Admin sign-in" : "Email magic link"}</h2>
                         </div>
                     </div>
                     <label htmlFor="host-email">Host email</label>
@@ -75,13 +83,13 @@ export function HostSignIn({
                     <input id="admin-secret" name="secret" type="password" autoComplete="current-password" disabled={status === "sending" || status === "sent"} />
                     <button className="broadcast-action" type="submit" disabled={status === "sending" || status === "sent"}>
                         <Mail size={19} aria-hidden="true" />
-                        {status === "sending" ? "Sending link..." : status === "sent" ? "Link sent" : adminLogin ? "Send admin magic link" : "Send Host magic link"}
+                        {status === "sending" ? "Signing in..." : status === "sent" ? "Signed in" : adminLogin ? "Sign in as content admin" : "Send Host magic link"}
                     </button>
                     <button className="back-link" type="button" disabled={status === "sending" || status === "sent"} onClick={() => setAdminLogin((current) => !current)}>{adminLogin ? "Use Host login" : "Use content admin login"}</button>
                     <div className={`status-notice status-${status}`} role="status" aria-live="polite">
-                        {status === "idle" && (adminLogin ? "Enter the content admin secret, then use the link in this browser." : "The link signs in only this browser.")}
-                        {status === "sending" && "Requesting a secure sign-in link..."}
-                        {status === "sent" && "Check your inbox. You can close this tab after opening the link."}
+                        {status === "idle" && (adminLogin ? "Enter the content admin secret to sign in on this device." : "The link signs in only this browser.")}
+                        {status === "sending" && (adminLogin ? "Checking admin access..." : "Requesting a secure sign-in link...")}
+                        {status === "sent" && (adminLogin ? "Signed in. Opening the Host dashboard..." : "Check your inbox. You can close this tab after opening the link.")}
                         {status === "error" && "The link could not be issued or completed. Check the address and try again."}
                     </div>
                 </form>

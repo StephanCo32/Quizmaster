@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { hostReturnPath } from "@/lib/host/return-path";
 import { appUrl, contentAdminSecret } from "@/lib/env";
+import { setAdminSession } from "@/lib/host/admin-session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const requestSchema = z.object({
@@ -36,6 +37,10 @@ export async function POST(request: Request) {
         if (error || !user) return Response.json({ error: "invalid_admin_credentials" }, { status: 403 });
         const { data: isAdmin, error: roleError } = await admin.rpc("content_admin_check", { p_user_id: user.id });
         if (roleError || !isAdmin) return Response.json({ error: "invalid_admin_credentials" }, { status: 403 });
+
+        const response = Response.json({ status: "signed_in" });
+        setAdminSession(response, { id: user.id, email: user.email ?? parsed.data.email });
+        return response;
     }
 
     const callbackUrl = new URL("/auth/callback", appUrl() ?? request.url);
