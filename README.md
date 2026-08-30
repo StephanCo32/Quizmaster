@@ -70,6 +70,11 @@ used for local and Development projects, while `supabase/config.production.toml`
 is used only by the production release workflow. Do not run `supabase config push`
 against Production from a development checkout.
 
+Content admins sign in with their approved Supabase Auth email address and
+`CONTENT_ADMIN_SECRET`; this issues a 12-hour HttpOnly session cookie and does
+not send an email. Add each admin's Auth user ID to `content_admin_roles` in
+both the Development and Production Supabase projects.
+
 For first-time provisioning, run the interactive wizard from a clean `main`
 checkout using Git Bash:
 
