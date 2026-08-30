@@ -32,7 +32,7 @@ export function HostSignIn({
                 email: formData.get("email"),
                 next: nextPath,
                 admin: adminLogin,
-                secret: formData.get("secret"),
+                ...(adminLogin ? { secret: formData.get("secret") } : {}),
             }),
         });
 
@@ -77,8 +77,10 @@ export function HostSignIn({
                         required
                         disabled={status === "sending" || status === "sent"}
                     />
-                    <label htmlFor="admin-secret">Content admin secret</label>
-                    <input id="admin-secret" name="secret" type="password" autoComplete="current-password" disabled={status === "sending" || status === "sent"} />
+                    {adminLogin && <>
+                        <label htmlFor="admin-secret">Content admin secret</label>
+                        <input id="admin-secret" name="secret" type="password" autoComplete="current-password" required disabled={status === "sending" || status === "sent"} />
+                    </>}
                     <button className="broadcast-action" type="submit" disabled={status === "sending" || status === "sent"}>
                         <Mail size={19} aria-hidden="true" />
                         {status === "sending" ? "Signing in..." : status === "sent" ? "Signed in" : adminLogin ? "Sign in as content admin" : "Send Host magic link"}
