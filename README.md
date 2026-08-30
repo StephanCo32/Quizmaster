@@ -65,6 +65,11 @@ CI runs the same checks and validates all migrations against local Supabase.
 
 ## Production release
 
+Supabase configuration is split by environment: `supabase/config.toml` is
+used for local and Development projects, while `supabase/config.production.toml`
+is used only by the production release workflow. Do not run `supabase config push`
+against Production from a development checkout.
+
 For first-time provisioning, run the interactive wizard from a clean `main`
 checkout using Git Bash:
 
