@@ -70,8 +70,16 @@ _Avoid_: Game mode, mini-game
 A globally available reusable configuration for one Game type, managed outside Parties and Game sessions by Content administrators and selected by Hosts to prepare Game rounds.
 _Avoid_: Prepared Game round, preset
 
+**Turn order**:
+The Party-join-order sequence, filtered to a Game round's eligible Players, used to sequence per-Player turns within the round.
+_Avoid_: PlayerOrder, seating order
+
+**Official caption**:
+A Picture-caption round template's mandatory, curator-authored caption, presented anonymously as a Caption candidate during Voting alongside Player submissions.
+_Avoid_: Prompt, description, hint
+
 **Picture-caption round**:
-A Game round in which eligible Players submit captions for one picture, vote for an anonymous Caption candidate, watch Ballots be revealed, and then see authors and results. Its internal phases are Captioning, Voting, Reveal, and Results.
+A Game round in which eligible Players submit captions for one picture, vote one at a time in Turn order for an anonymous Caption candidate (including the round's Official caption), watch the Host reveal each candidate's authorship, and then see authors and results. Its internal phases are Captioning, Voting, Reveal, and Results.
 _Avoid_: Caption game, picture round
 
 **Captioning**:
@@ -79,11 +87,11 @@ The Active Picture-caption round phase in which eligible Players create or edit 
 _Avoid_: Submission round
 
 **Voting**:
-The Active Picture-caption round phase in which eligible Players cast one final Ballot for a Caption candidate.
+The Active Picture-caption round phase in which eligible Players cast one final Ballot for a Caption candidate, one Player at a time in Turn order.
 _Avoid_: Rating
 
 **Reveal**:
-The Resolving Picture-caption round phase in which committed Ballots are presented one at a time without changing the already committed result.
+The Resolving Picture-caption round phase in which the Host reveals each Caption candidate's authorship, in any order and at their own pace, without changing the already committed result.
 _Avoid_: Resolution
 
 **Results**:
@@ -95,7 +103,7 @@ One Player's editable text response to the picture in a picture-caption Game rou
 _Avoid_: Answer, Caption candidate
 
 **Caption candidate**:
-An anonymous voting choice formed from one or more Caption submissions with the same normalized text. Every submitting Player is a co-author and receives one point for each valid ballot cast for the candidate.
+An anonymous voting choice during Voting: either one or more Caption submissions with the same normalized text, whose submitting Players are co-authors each earning one point per valid Ballot cast for it, or the round's Official caption, which has no author and instead earns each Player who casts a Ballot for it one point.
 _Avoid_: Caption submission, answer
 
 **Ballot**:
