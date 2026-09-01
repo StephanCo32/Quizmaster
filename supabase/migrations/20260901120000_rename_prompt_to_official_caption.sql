@@ -2,7 +2,8 @@ alter table public.picture_caption_templates rename column prompt to official_ca
 alter table public.picture_caption_templates rename constraint picture_caption_templates_prompt_check to picture_caption_templates_official_caption_check;
 alter table public.picture_caption_rounds rename column snapshot_prompt to snapshot_official_caption;
 
-create or replace function public.create_picture_caption_template(
+drop function public.create_picture_caption_template(uuid, uuid, text, text, text);
+create function public.create_picture_caption_template(
     p_admin_id uuid, p_command_id uuid, p_name text, p_picture_url text, p_official_caption text
 )
 returns table (template_id uuid, name text, picture_url text, official_caption text, revision bigint, created_at timestamptz, updated_at timestamptz)
@@ -20,7 +21,8 @@ begin
 end;
 $$;
 
-create or replace function public.update_picture_caption_template(
+drop function public.update_picture_caption_template(uuid, uuid, uuid, text, text, text, bigint);
+create function public.update_picture_caption_template(
     p_admin_id uuid, p_command_id uuid, p_template_id uuid, p_name text, p_picture_url text, p_official_caption text, p_expected_revision bigint
 )
 returns table (template_id uuid, name text, picture_url text, official_caption text, revision bigint, created_at timestamptz, updated_at timestamptz)
@@ -42,18 +44,21 @@ begin
 end;
 $$;
 
-create or replace function public.picture_caption_templates_projection(p_admin_id uuid)
+drop function public.picture_caption_templates_projection(uuid);
+create function public.picture_caption_templates_projection(p_admin_id uuid)
 returns table (template_id uuid, name text, picture_url text, official_caption text, revision bigint, created_at timestamptz, updated_at timestamptz)
 language sql stable security definer set search_path = ''
 as $$ select id, name, picture_url, official_caption, revision, created_at, updated_at from public.picture_caption_templates where public.content_admin_check(p_admin_id) order by created_at desc; $$;
 
-create or replace function public.host_picture_caption_template_catalog(p_host_id uuid,p_party_id uuid)
+drop function public.host_picture_caption_template_catalog(uuid,uuid);
+create function public.host_picture_caption_template_catalog(p_host_id uuid,p_party_id uuid)
 returns table (template_id uuid,name text,official_caption text,revision bigint)
 language sql stable security definer set search_path='' as $$
  select template.id,template.name,template.official_caption,template.revision from public.picture_caption_templates template where exists(select 1 from public.parties party where party.id=p_party_id and party.host_id=p_host_id) order by template.name;
 $$;
 
-create or replace function public.host_picture_caption_rounds_projection(p_host_id uuid, p_party_id uuid)
+drop function public.host_picture_caption_rounds_projection(uuid,uuid);
+create function public.host_picture_caption_rounds_projection(p_host_id uuid, p_party_id uuid)
 returns table (round_id uuid, round_position integer, state text, template_id uuid, name text, picture_url text, official_caption text, captioning_seconds integer, voting_seconds integer, caption_grapheme_limit integer, phase text, captioning_deadline timestamptz, paused_remaining_seconds integer, game_session_id uuid, session_revision bigint)
 language sql stable security definer set search_path = '' as $$
  select round.id, round.position, round.state, round.template_id, template.name, coalesce(round.snapshot_picture_url, template.picture_url), coalesce(round.snapshot_official_caption, template.official_caption), round.captioning_seconds, round.voting_seconds, round.caption_grapheme_limit, round.phase, round.captioning_deadline, round.paused_remaining_seconds, session.id, session.revision
@@ -61,13 +66,15 @@ language sql stable security definer set search_path = '' as $$
  where party.host_id=p_host_id and party.id=p_party_id order by round.position;
 $$;
 
-create or replace function public.player_picture_caption_round_projection(p_player_id uuid,p_party_code text)
+drop function public.player_picture_caption_round_projection(uuid,text);
+create function public.player_picture_caption_round_projection(p_player_id uuid,p_party_code text)
 returns table (round_id uuid,official_caption text,phase text,captioning_deadline timestamptz,paused_remaining_seconds integer,caption_grapheme_limit integer,game_session_id uuid,session_revision bigint)
 language sql stable security definer set search_path='' as $$
  select round.id,round.snapshot_official_caption,round.phase,round.captioning_deadline,round.paused_remaining_seconds,round.caption_grapheme_limit,session.id,session.revision from public.party_members member join public.parties party on party.id=member.party_id join public.game_sessions session on session.id=party.current_game_session_id join public.picture_caption_rounds round on round.game_session_id=session.id and round.state='active' where member.player_id=p_player_id and member.access_status='joined' and party.code=upper(trim(p_party_code));
 $$;
 
-create or replace function public.display_picture_caption_round_projection(p_display_session_id uuid,p_party_code text)
+drop function public.display_picture_caption_round_projection(uuid,text);
+create function public.display_picture_caption_round_projection(p_display_session_id uuid,p_party_code text)
 returns table (round_id uuid,official_caption text,phase text,captioning_deadline timestamptz,paused_remaining_seconds integer,caption_grapheme_limit integer,game_session_id uuid,session_revision bigint)
 language sql stable security definer set search_path='' as $$
  select round.id,round.snapshot_official_caption,round.phase,round.captioning_deadline,round.paused_remaining_seconds,round.caption_grapheme_limit,session.id,session.revision from public.display_sessions display_session join public.parties party on party.id=display_session.party_id join public.game_sessions session on session.id=party.current_game_session_id join public.picture_caption_rounds round on round.game_session_id=session.id and round.state='active' where display_session.id=p_display_session_id and display_session.revoked_at is null and party.code=upper(trim(p_party_code));
@@ -94,3 +101,17 @@ begin
  insert into public.command_receipts values(p_host_id,p_command_id,'start_picture_caption_session',jsonb_build_object('roundId',activated_round.id,'gameSessionId',session_record.id,'sessionRevision',session_record.revision,'captioningDeadline',activated_round.captioning_deadline));
  return query select activated_round.id,session_record.id,session_record.revision,activated_round.captioning_deadline;
 end; $$;
+
+-- DROP FUNCTION clears prior grants, so every renamed function's privileges are restated here to match what it had before.
+revoke all on function public.create_picture_caption_template(uuid, uuid, text, text, text) from public, anon, authenticated;
+revoke all on function public.update_picture_caption_template(uuid, uuid, uuid, text, text, text, bigint) from public, anon, authenticated;
+revoke all on function public.picture_caption_templates_projection(uuid) from public, anon, authenticated;
+grant execute on function public.create_picture_caption_template(uuid, uuid, text, text, text) to service_role;
+grant execute on function public.update_picture_caption_template(uuid, uuid, uuid, text, text, text, bigint) to service_role;
+grant execute on function public.picture_caption_templates_projection(uuid) to service_role;
+
+revoke all on function public.host_picture_caption_rounds_projection(uuid,uuid),public.player_picture_caption_round_projection(uuid,text),public.display_picture_caption_round_projection(uuid,text) from public,anon,authenticated;
+grant execute on function public.host_picture_caption_rounds_projection(uuid,uuid),public.player_picture_caption_round_projection(uuid,text),public.display_picture_caption_round_projection(uuid,text) to service_role;
+
+revoke all on function public.host_picture_caption_template_catalog(uuid,uuid) from public,anon,authenticated;
+grant execute on function public.host_picture_caption_template_catalog(uuid,uuid) to service_role;
