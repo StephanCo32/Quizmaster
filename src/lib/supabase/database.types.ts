@@ -34,7 +34,7 @@ export type PictureCaptionTemplate = {
     template_id: string;
     name: string;
     picture_url: string;
-    prompt: string | null;
+    official_caption: string | null;
     revision: number;
     created_at: string;
     updated_at: string;
@@ -67,7 +67,7 @@ export type PictureCaptionRound = {
     template_id: string | null;
     name: string | null;
     picture_url: string | null;
-    prompt: string | null;
+    official_caption: string | null;
     captioning_seconds: number;
     voting_seconds: number;
     caption_grapheme_limit: number;
@@ -80,7 +80,7 @@ export type PictureCaptionRound = {
 
 export type ActivePictureCaptionRound = {
     round_id: string;
-    prompt: string | null;
+    official_caption: string | null;
     phase: "captioning" | "voting" | "revealing" | "results" | null;
     captioning_deadline: string | null;
     paused_remaining_seconds: number | null;
@@ -89,7 +89,7 @@ export type ActivePictureCaptionRound = {
     session_revision: number;
 };
 
-export type HostPictureCaptionTemplate = Pick<PictureCaptionTemplate, "template_id" | "name" | "prompt" | "revision">;
+export type HostPictureCaptionTemplate = Pick<PictureCaptionTemplate, "template_id" | "name" | "official_caption" | "revision">;
 
 export type PictureCaptionSubmission = {
     submission_id: string;
@@ -156,11 +156,11 @@ export type Database = {
             revoke_content_admin: { Args: { p_actor_id: string; p_target_id: string }; Returns: boolean };
             content_admin_roles_projection: { Args: { p_admin_id: string }; Returns: { user_id: string }[] };
             create_picture_caption_template: {
-                Args: { p_admin_id: string; p_command_id: string; p_name: string; p_picture_url: string; p_prompt: string | null };
+                Args: { p_admin_id: string; p_command_id: string; p_name: string; p_picture_url: string; p_official_caption: string | null };
                 Returns: PictureCaptionTemplate[];
             };
             update_picture_caption_template: {
-                Args: { p_admin_id: string; p_command_id: string; p_template_id: string; p_name: string; p_picture_url: string; p_prompt: string | null; p_expected_revision: number };
+                Args: { p_admin_id: string; p_command_id: string; p_template_id: string; p_name: string; p_picture_url: string; p_official_caption: string | null; p_expected_revision: number };
                 Returns: PictureCaptionTemplate[];
             };
             delete_picture_caption_template: {

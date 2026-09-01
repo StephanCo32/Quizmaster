@@ -8,9 +8,9 @@ export async function listPictureCaptionTemplates(adminId: string) {
     return data as PictureCaptionTemplate[];
 }
 
-export async function createPictureCaptionTemplate(command: { adminId: string; commandId: string; name: string; pictureUrl: string; prompt: string | null }) {
+export async function createPictureCaptionTemplate(command: { adminId: string; commandId: string; name: string; pictureUrl: string; officialCaption: string | null }) {
     const { data, error } = await createSupabaseAdminClient().rpc("create_picture_caption_template", {
-        p_admin_id: command.adminId, p_command_id: command.commandId, p_name: command.name, p_picture_url: command.pictureUrl, p_prompt: command.prompt,
+        p_admin_id: command.adminId, p_command_id: command.commandId, p_name: command.name, p_picture_url: command.pictureUrl, p_official_caption: command.officialCaption,
     });
     if (error) throw new Error(error.code === "42501" ? "not_content_admin" : "template_create_failed", { cause: error });
     const result = data.at(0);
@@ -18,9 +18,9 @@ export async function createPictureCaptionTemplate(command: { adminId: string; c
     return result;
 }
 
-export async function updatePictureCaptionTemplate(command: { adminId: string; commandId: string; templateId: string; name: string; pictureUrl: string; prompt: string | null; expectedRevision: number }) {
+export async function updatePictureCaptionTemplate(command: { adminId: string; commandId: string; templateId: string; name: string; pictureUrl: string; officialCaption: string | null; expectedRevision: number }) {
     const { data, error } = await createSupabaseAdminClient().rpc("update_picture_caption_template", {
-        p_admin_id: command.adminId, p_command_id: command.commandId, p_template_id: command.templateId, p_name: command.name, p_picture_url: command.pictureUrl, p_prompt: command.prompt, p_expected_revision: command.expectedRevision,
+        p_admin_id: command.adminId, p_command_id: command.commandId, p_template_id: command.templateId, p_name: command.name, p_picture_url: command.pictureUrl, p_official_caption: command.officialCaption, p_expected_revision: command.expectedRevision,
     });
     if (error) throw new Error(error.code === "40001" ? "stale_revision" : error.message === "template_not_found" ? "template_not_found" : "template_update_failed", { cause: error });
     const result = data.at(0);

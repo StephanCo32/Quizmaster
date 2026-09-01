@@ -4,7 +4,7 @@ create temporary table tap_results (result text) on commit drop;
 insert into tap_results select plan(3);
 insert into auth.users (id,email) values ('11111111-eeee-4111-8111-111111111111','reveal-host@example.com'),('22222222-eeee-4222-8222-222222222222','reveal-player@example.com');
 insert into public.content_admin_roles(user_id) values('11111111-eeee-4111-8111-111111111111');
-insert into public.picture_caption_templates(id,created_by_user_id,name,picture_url,prompt) values('44444444-eeee-4444-8444-444444444444','11111111-eeee-4111-8111-111111111111','Reveal picture','https://example.com/reveal.jpg','Caption this');
+insert into public.picture_caption_templates(id,created_by_user_id,name,picture_url,official_caption) values('44444444-eeee-4444-8444-444444444444','11111111-eeee-4111-8111-111111111111','Reveal picture','https://example.com/reveal.jpg','Caption this');
 select public.create_party('11111111-eeee-4111-8111-111111111111','55555555-eeee-4555-8555-555555555555',0);
 select public.open_party_lobby('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'66666666-eeee-4666-8666-666666666666',0);
 select public.join_party('22222222-eeee-4222-8222-222222222222',(select code from public.parties limit 1),'Ada','77777777-eeee-4777-8777-777777777777',1);
