@@ -8,7 +8,7 @@ insert into auth.users (id, email) values
     ('11111111-bbbb-4111-8111-111111111111', 'caption-host@example.com'),
     ('22222222-bbbb-4222-8222-222222222222', 'caption-player@example.com');
 insert into public.content_admin_roles (user_id) values ('11111111-bbbb-4111-8111-111111111111');
-insert into public.picture_caption_templates (id, created_by_user_id, name, picture_url, prompt) values ('33333333-bbbb-4333-8333-333333333333', '11111111-bbbb-4111-8111-111111111111', 'Caption picture', 'https://example.com/picture.jpg', 'Caption this');
+insert into public.picture_caption_templates (id, created_by_user_id, name, picture_url, official_caption) values ('33333333-bbbb-4333-8333-333333333333', '11111111-bbbb-4111-8111-111111111111', 'Caption picture', 'https://example.com/picture.jpg', 'Caption this');
 select public.create_party('11111111-bbbb-4111-8111-111111111111', '44444444-bbbb-4444-8444-444444444444', 0);
 select public.open_party_lobby('11111111-bbbb-4111-8111-111111111111', (select id from public.parties limit 1), '55555555-bbbb-4555-8555-555555555555', 0);
 select public.join_party('22222222-bbbb-4222-8222-222222222222', (select code from public.parties limit 1), 'Ada', '66666666-bbbb-4666-8666-666666666666', 1);
