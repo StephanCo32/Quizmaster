@@ -105,7 +105,7 @@ export function PlayerLobby({
     const nextRoster = projection.roster;
     setRoster((currentRoster) =>
       (nextRoster[0]?.session_revision ?? 0) >=
-      (currentRoster[0]?.session_revision ?? 0)
+        (currentRoster[0]?.session_revision ?? 0)
         ? nextRoster
         : currentRoster,
     );
