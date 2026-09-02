@@ -25,6 +25,7 @@ export function PlayerLobby({
   const [activeRound, setActiveRound] = useState(initialActiveRound);
   const [caption, setCaption] = useState(initialSubmission?.caption ?? "");
   const [candidates, setCandidates] = useState(initialCandidates);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [nickname, setNickname] = useState(initialRoster[0]?.nickname ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -40,7 +41,9 @@ export function PlayerLobby({
 
   const secondsRemaining = activeRound?.captioning_deadline
     ? Math.max(0, Math.ceil((new Date(activeRound.captioning_deadline).getTime() - Date.now()) / 1000))
-    : activeRound?.paused_remaining_seconds ?? null;
+    : activeRound?.turn_deadline
+      ? Math.max(0, Math.ceil((new Date(activeRound.turn_deadline).getTime() - Date.now()) / 1000))
+      : activeRound?.paused_remaining_seconds ?? activeRound?.turn_paused_remaining_seconds ?? null;
   const refreshForCountdown = useEffectEvent(() => void refresh());
 
   useEffect(() => {
@@ -110,7 +113,7 @@ export function PlayerLobby({
     setCandidates(projection.candidates);
   }
 
-  async function castBallot(candidateId: string) { if (!canWrite) return; setBusy(true); setError(null); const response = await fetch(`/api/play/${partyCode}/ballot`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ commandId: crypto.randomUUID(), expectedRevision: revision, candidateId }) }); if (!response.ok) setError("Your ballot could not be saved."); else await refresh(); setBusy(false); }
+  async function castBallot() { if (!canWrite || !selectedCandidateId) return; setBusy(true); setError(null); const response = await fetch(`/api/play/${partyCode}/ballot`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ commandId: crypto.randomUUID(), expectedRevision: revision, candidateId: selectedCandidateId }) }); if (!response.ok) setError("Your ballot could not be saved."); else { setSelectedCandidateId(null); await refresh(); } setBusy(false); }
 
   async function submitCaption(event: React.FormEvent) {
     event.preventDefault(); if (!activeRound || !canWrite) return;
@@ -159,9 +162,9 @@ export function PlayerLobby({
                   : "Disconnected. Showing the last committed Lobby; Player writes are paused."}
             </div>
           )}
-          {activeRound && <section className="broadcast-panel player-card"><div><span className="rail-label">{activeRound.phase}{activeRound.paused_remaining_seconds !== null ? " paused" : ""}</span><h2>{activeRound.phase === "voting" ? "Choose your favorite caption." : activeRound.official_caption ?? "Write a caption."}</h2>{secondsRemaining !== null && <p className="round-countdown">{secondsRemaining}s</p>}</div></section>}
+          {activeRound && <section className="broadcast-panel player-card"><div><span className="rail-label">{activeRound.phase}{(activeRound.paused_remaining_seconds !== null || activeRound.turn_paused_remaining_seconds !== null) ? " paused" : ""}</span><h2>{activeRound.phase === "captioning" ? "Write a caption." : ""}</h2>{secondsRemaining !== null && <p className="round-countdown">{secondsRemaining}s</p>}</div></section>}
           {activeRound?.phase === "captioning" && <form className="broadcast-panel nickname-form" onSubmit={submitCaption}><label>Caption<textarea required maxLength={1000} rows={3} value={caption} onChange={(event) => setCaption(event.target.value)} /></label><button className="broadcast-action" type="submit" disabled={busy || !canWrite || activeRound.captioning_deadline === null}>{caption ? "Update caption" : "Submit caption"}</button></form>}
-          {activeRound?.phase === "voting" && <section className="broadcast-panel"><h2>Choose a caption</h2><div className="roster-list">{candidates.map((candidate) => <button className="roster-row" type="button" key={candidate.candidate_id} disabled={busy || !canWrite || candidate.has_voted} onClick={() => void castBallot(candidate.candidate_id)}><span className="roster-color" style={{ backgroundColor: candidate.is_own ? candidate.own_color : "transparent" }} aria-label={candidate.is_own ? "Your caption" : undefined} /><strong>{candidate.caption}</strong></button>)}</div>{candidates[0]?.has_voted && <p>Ballot submitted. Waiting for the result.</p>}</section>}
+          {activeRound?.phase === "voting" && <section className="broadcast-panel"><h2>{activeRound.is_my_turn ? "Your turn - choose a letter" : "Waiting for your turn"}</h2><div className="roster-list">{candidates.map((candidate) => <button className="roster-row" type="button" key={candidate.candidate_id} disabled={busy || !canWrite || !activeRound.is_my_turn || candidate.has_voted} aria-pressed={selectedCandidateId === candidate.candidate_id} onClick={() => setSelectedCandidateId(candidate.candidate_id)}><span className="roster-color" style={{ backgroundColor: candidate.is_own ? candidate.own_color : "transparent" }} aria-label={candidate.is_own ? "Your caption" : undefined} /><strong>{candidate.letter}</strong></button>)}</div>{activeRound.is_my_turn && !candidates[0]?.has_voted && <button className="broadcast-action" type="button" disabled={busy || !canWrite || !selectedCandidateId} onClick={() => void castBallot()}>Submit answer</button>}{candidates[0]?.has_voted && <p>Ballot submitted. Waiting for the result.</p>}</section>}
           {member.session_state === "finished" && <section className="broadcast-panel"><h2>Game session complete</h2><p>Scores are settled. Waiting for the Host to start the next session.</p></section>}
           {member.session_state === "lobby" && !activeRound && <section className="broadcast-panel"><h2>Intermission</h2><p>The next Game session is ready. Mark yourself ready when the Host is set.</p></section>}
           <div className="broadcast-panel player-card">

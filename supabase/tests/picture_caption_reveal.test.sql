@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 create temporary table tap_results (result text) on commit drop;
-insert into tap_results select plan(3);
+insert into tap_results select plan(7);
 insert into auth.users (id,email) values ('11111111-eeee-4111-8111-111111111111','reveal-host@example.com'),('22222222-eeee-4222-8222-222222222222','reveal-player@example.com');
 insert into public.content_admin_roles(user_id) values('11111111-eeee-4111-8111-111111111111');
 insert into public.picture_caption_templates(id,created_by_user_id,name,picture_url,official_caption) values('44444444-eeee-4444-8444-444444444444','11111111-eeee-4111-8111-111111111111','Reveal picture','https://example.com/reveal.jpg','Caption this');
@@ -14,11 +14,16 @@ select public.add_picture_caption_round('11111111-eeee-4111-8111-111111111111',(
 select public.start_picture_caption_session('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'bbbbbbbb-eeee-4bbb-8bbb-bbbbbbbbbbbb',5);
 select public.submit_picture_caption('22222222-eeee-4222-8222-222222222222',(select code from public.parties limit 1),'cccccccc-eeee-4ccc-8ccc-cccccccccccc',6,'A caption');
 select public.close_picture_captioning('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'dddddddd-eeee-4ddd-8ddd-dddddddddddd',7,false);
-select public.cast_picture_caption_ballot('22222222-eeee-4222-8222-222222222222',(select code from public.parties limit 1),'ffffffff-eeee-4fff-8fff-ffffffffffff',8,(select id from public.picture_caption_candidates limit 1));
+select public.cast_picture_caption_ballot('22222222-eeee-4222-8222-222222222222',(select code from public.parties limit 1),'ffffffff-eeee-4fff-8fff-ffffffffffff',8,(select id from public.picture_caption_candidates where not is_official limit 1));
 insert into tap_results select lives_ok($$select * from public.start_picture_caption_reveal('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'10101010-eeee-4010-8010-101010101010',(select revision from public.game_sessions limit 1))$$,'Host starts one Reveal sequence');
 insert into tap_results select is((select phase from public.picture_caption_rounds where state='active'),'revealing','Reveal becomes the active phase');
+insert into tap_results select throws_ok($$select * from public.continue_picture_caption_round('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'11111111-eeee-4011-8011-111111111111',(select revision from public.game_sessions limit 1))$$,'40001','reveal_incomplete','Continue is rejected until every candidate is revealed');
+insert into tap_results select lives_ok($$select * from public.reveal_picture_caption_candidate('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'13131313-eeee-4013-8013-131313131313',(select revision from public.game_sessions limit 1),(select id from public.picture_caption_candidates where round_id=(select id from public.picture_caption_rounds where state='active') and not is_official))$$,'Host can reveal one candidate');
+insert into tap_results select lives_ok($$select * from public.reveal_picture_caption_candidate('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'14141414-eeee-4014-8014-141414141414',(select revision from public.game_sessions limit 1),(select id from public.picture_caption_candidates where round_id=(select id from public.picture_caption_rounds where state='active') and is_official))$$,'Host can reveal the Official caption');
 select public.continue_picture_caption_round('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'12121212-eeee-4012-8012-121212121212',(select revision from public.game_sessions limit 1));
-insert into tap_results select is((select count(*) from public.picture_caption_rounds where state='pending'),1::bigint,'Continue completes current round and retains next round as pending');
+insert into tap_results select is((select phase from public.picture_caption_rounds where state='active'),'results','Continue moves a fully revealed round into Results');
+select public.continue_picture_caption_round('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'15151515-eeee-4015-8015-151515151515',(select revision from public.game_sessions limit 1));
+insert into tap_results select is((select count(*) from public.picture_caption_rounds where state='pending'),1::bigint,'A second Continue completes current round and retains next round as pending');
 insert into tap_results select * from finish();
 do $$ declare failures text; begin select string_agg(result,E'\n') into failures from tap_results where result like 'not ok%'; if failures is not null then raise exception using message=failures; end if; end $$;
 select result from tap_results;

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { PartySetup } from "@/components/host/party-setup";
 import { getHostParty } from "@/lib/host/parties";
-import { getHostPictureCaptionBallots, getHostPictureCaptionCompletion, getHostPictureCaptionRounds, getHostPictureCaptionSubmissions, getHostPictureCaptionTemplates } from "@/lib/host/rounds";
+import { getHostPictureCaptionBallots, getHostPictureCaptionCompletion, getHostPictureCaptionRevealCandidates, getHostPictureCaptionRounds, getHostPictureCaptionSubmissions, getHostPictureCaptionTemplates } from "@/lib/host/rounds";
 import { getHostPartyLobby } from "@/lib/player/parties";
 import { getHost } from "@/lib/host/session";
 
@@ -25,6 +25,6 @@ export default async function HostPartyPage({
         notFound();
     }
 
-    const [roster, rounds, templates, submissions, completion, ballots] = await Promise.all([getHostPartyLobby(host.id, partyId), getHostPictureCaptionRounds(host.id, partyId), getHostPictureCaptionTemplates(host.id, partyId), getHostPictureCaptionSubmissions(host.id, partyId), getHostPictureCaptionCompletion(host.id, partyId), getHostPictureCaptionBallots(host.id, partyId)]);
-    return <PartySetup party={party} roster={roster} rounds={rounds} templates={templates} initialSubmissions={submissions} initialCompletion={completion} initialBallots={ballots} />;
+    const [roster, rounds, templates, submissions, completion, ballots, revealCandidates] = await Promise.all([getHostPartyLobby(host.id, partyId), getHostPictureCaptionRounds(host.id, partyId), getHostPictureCaptionTemplates(host.id, partyId), getHostPictureCaptionSubmissions(host.id, partyId), getHostPictureCaptionCompletion(host.id, partyId), getHostPictureCaptionBallots(host.id, partyId), getHostPictureCaptionRevealCandidates(host.id, partyId)]);
+    return <PartySetup party={party} roster={roster} rounds={rounds} templates={templates} initialSubmissions={submissions} initialCompletion={completion} initialBallots={ballots} initialRevealCandidates={revealCandidates} />;
 }

@@ -53,12 +53,7 @@ export async function getPlayerPictureCaptionRound(playerId: string, partyCode: 
         if (resolvedError) throw new Error("player_projection_unavailable", { cause: resolvedError });
         round = resolved.at(0) ?? null;
     }
-    if (round?.phase !== "revealing") return round;
-    const { error: resolveError } = await client.rpc("resolve_picture_caption_reveal", { p_game_session_id: round.game_session_id });
-    if (resolveError) throw new Error("player_projection_unavailable", { cause: resolveError });
-    const { data: resolved, error: resolvedError } = await client.rpc("player_picture_caption_round_projection", { p_player_id: playerId, p_party_code: partyCode });
-    if (resolvedError) throw new Error("player_projection_unavailable", { cause: resolvedError });
-    return resolved.at(0) ?? null;
+    return round;
 }
 
 export async function getPlayerPictureCaptionSubmission(playerId: string, partyCode: string) {
@@ -74,7 +69,7 @@ export async function submitPictureCaption(command: { playerId: string; partyCod
 }
 
 export async function getPlayerPictureCaptionCandidates(playerId: string, partyCode: string): Promise<PictureCaptionCandidate[]> { const { data, error } = await createSupabaseAdminClient().rpc("player_picture_caption_candidates_projection", { p_player_id: playerId, p_party_code: partyCode }); if (error) throw new Error("player_projection_unavailable", { cause: error }); return data; }
-export async function castPictureCaptionBallot(command: { playerId: string; partyCode: string; commandId: string; expectedRevision: number; candidateId: string }): Promise<LobbyCommandResult> { const { data, error } = await createSupabaseAdminClient().rpc("cast_picture_caption_ballot", { p_player_id: command.playerId, p_party_code: command.partyCode, p_command_id: command.commandId, p_expected_revision: command.expectedRevision, p_candidate_id: command.candidateId }); if (error) throw new Error(error.message === "ballot_already_cast" || error.code === "40001" ? error.message : "ballot_failed", { cause: error }); const result = data.at(0); if (!result) throw new Error("ballot_failed"); return result; }
+export async function castPictureCaptionBallot(command: { playerId: string; partyCode: string; commandId: string; expectedRevision: number; candidateId: string }): Promise<LobbyCommandResult> { const { data, error } = await createSupabaseAdminClient().rpc("cast_picture_caption_ballot", { p_player_id: command.playerId, p_party_code: command.partyCode, p_command_id: command.commandId, p_expected_revision: command.expectedRevision, p_candidate_id: command.candidateId }); if (error) throw new Error(error.message === "ballot_already_cast" || error.message === "not_your_turn" || error.message === "turn_expired" || error.code === "40001" ? error.message : "ballot_failed", { cause: error }); const result = data.at(0); if (!result) throw new Error("ballot_failed"); return result; }
 export async function getPlayerPictureCaptionResults(playerId: string, partyCode: string): Promise<PictureCaptionResult[]> { const { data, error } = await createSupabaseAdminClient().rpc("player_picture_caption_results_projection", { p_player_id: playerId, p_party_code: partyCode }); if (error) throw new Error("player_projection_unavailable", { cause: error }); return data; }
 
 export async function getHostPartyLobby(hostId: string, partyId: string): Promise<PartyMemberProjection[]> {

@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import type { ActivePictureCaptionRound, DisplayMemberProjection, DisplayPartyProjection, DisplayPictureCaptionCandidate, PictureCaptionCompletion, PictureCaptionResult } from "@/lib/supabase/database.types";
+import type { ActivePictureCaptionRound, DisplayMemberProjection, DisplayPartyProjection, DisplayPictureCaptionCandidate, PictureCaptionCompletion, PictureCaptionResult, PictureCaptionRevealCandidate } from "@/lib/supabase/database.types";
 
 export const displaySessionCookieName = "quizmaster_display_session";
 
@@ -57,14 +57,10 @@ export async function getDisplayPictureCaptionRound(displaySessionId: string, pa
         if (resolvedError) throw new Error("display_projection_unavailable", { cause: resolvedError });
         round = resolved.at(0) ?? null;
     }
-    if (round?.phase !== "revealing") return round;
-    const { error: resolveError } = await client.rpc("resolve_picture_caption_reveal", { p_game_session_id: round.game_session_id });
-    if (resolveError) throw new Error("display_projection_unavailable", { cause: resolveError });
-    const { data: resolved, error: resolvedError } = await client.rpc("display_picture_caption_round_projection", { p_display_session_id: displaySessionId, p_party_code: partyCode });
-    if (resolvedError) throw new Error("display_projection_unavailable", { cause: resolvedError });
-    return resolved.at(0) ?? null;
+    return round;
 }
 
 export async function getDisplayPictureCaptionCompletion(displaySessionId: string, partyCode: string): Promise<PictureCaptionCompletion | null> { const { data, error } = await createSupabaseAdminClient().rpc("display_picture_caption_completion_projection", { p_display_session_id: displaySessionId, p_party_code: partyCode }); if (error) throw new Error("display_projection_unavailable", { cause: error }); return data.at(0) ?? null; }
 export async function getDisplayPictureCaptionCandidates(displaySessionId: string, partyCode: string): Promise<DisplayPictureCaptionCandidate[]> { const { data, error } = await createSupabaseAdminClient().rpc("display_picture_caption_candidates_projection", { p_display_session_id: displaySessionId, p_party_code: partyCode }); if (error) throw new Error("display_projection_unavailable", { cause: error }); return data; }
+export async function getDisplayPictureCaptionRevealCandidates(displaySessionId: string, partyCode: string): Promise<PictureCaptionRevealCandidate[]> { const { data, error } = await createSupabaseAdminClient().rpc("display_picture_caption_reveal_projection", { p_display_session_id: displaySessionId, p_party_code: partyCode }); if (error) throw new Error("display_projection_unavailable", { cause: error }); return data; }
 export async function getDisplayPictureCaptionResults(displaySessionId: string, partyCode: string): Promise<PictureCaptionResult[]> { const { data, error } = await createSupabaseAdminClient().rpc("display_picture_caption_results_projection", { p_display_session_id: displaySessionId, p_party_code: partyCode }); if (error) throw new Error("display_projection_unavailable", { cause: error }); return data; }
