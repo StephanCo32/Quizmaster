@@ -972,6 +972,25 @@ h1 {
 	border: 2px solid var(--broadcast-line);
 }
 
+.roster-row-selectable {
+	width: 100%;
+	text-align: left;
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+	transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.roster-row-selectable[aria-pressed="true"] {
+	border-color: var(--broadcast-mint);
+	background: rgba(117, 230, 181, 0.16);
+}
+
+.roster-row-selectable:disabled {
+	cursor: not-allowed;
+	opacity: 0.45;
+}
+
 .roster-row strong,
 .roster-row span {
 	display: block;
@@ -1308,6 +1327,54 @@ h1 {
 	font-size: 28px;
 	line-height: 1.25;
 }
+
+.display-candidate-votes,
+.reveal-card-voters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: auto;
+}
+
+.reveal-card {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 12px;
+	width: 100%;
+	text-align: left;
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+}
+
+.reveal-card:disabled {
+	cursor: default;
+}
+
+.reveal-card-heading {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.reveal-card-letter {
+	flex: 0 0 auto;
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	color: var(--broadcast-pink);
+	font-family: "Courier New", monospace;
+	font-size: 20px;
+	font-weight: 800;
+	border: 2px solid var(--broadcast-line);
+	border-radius: 50%;
+}
+
+.display-revealed .reveal-card-letter {
+	border-width: 3px;
+}
+
 
 .display-overflow {
 	align-items: center;
