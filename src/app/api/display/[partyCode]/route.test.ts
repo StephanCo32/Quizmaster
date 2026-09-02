@@ -1,17 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getDisplayParty, getDisplayPartyCanonicalCode, getDisplayPartyLobby, getDisplayPictureCaptionCandidates, getDisplayPictureCaptionCompletion, getDisplayPictureCaptionResults, getDisplayPictureCaptionRound, getDisplaySessionId } = vi.hoisted(() => ({
+const { getDisplayParty, getDisplayPartyCanonicalCode, getDisplayPartyLobby, getDisplayPictureCaptionCandidates, getDisplayPictureCaptionCompletion, getDisplayPictureCaptionResults, getDisplayPictureCaptionRevealCandidates, getDisplayPictureCaptionRound, getDisplaySessionId } = vi.hoisted(() => ({
     getDisplayParty: vi.fn(),
     getDisplayPartyCanonicalCode: vi.fn(),
     getDisplayPartyLobby: vi.fn(),
     getDisplayPictureCaptionCandidates: vi.fn(),
     getDisplayPictureCaptionCompletion: vi.fn(),
     getDisplayPictureCaptionResults: vi.fn(),
+    getDisplayPictureCaptionRevealCandidates: vi.fn(),
     getDisplayPictureCaptionRound: vi.fn(),
     getDisplaySessionId: vi.fn(),
 }));
 
-vi.mock("@/lib/display/sessions", () => ({ getDisplayParty, getDisplayPartyCanonicalCode, getDisplayPartyLobby, getDisplayPictureCaptionCandidates, getDisplayPictureCaptionCompletion, getDisplayPictureCaptionResults, getDisplayPictureCaptionRound, getDisplaySessionId }));
+vi.mock("@/lib/display/sessions", () => ({ getDisplayParty, getDisplayPartyCanonicalCode, getDisplayPartyLobby, getDisplayPictureCaptionCandidates, getDisplayPictureCaptionCompletion, getDisplayPictureCaptionResults, getDisplayPictureCaptionRevealCandidates, getDisplayPictureCaptionRound, getDisplaySessionId }));
 
 import { GET } from "./route";
 
@@ -35,6 +36,7 @@ describe("GET /api/display/[partyCode]", () => {
         getDisplayPictureCaptionRound.mockResolvedValue(null);
         getDisplayPictureCaptionCompletion.mockResolvedValue(null);
         getDisplayPictureCaptionCandidates.mockResolvedValue([]);
+        getDisplayPictureCaptionRevealCandidates.mockResolvedValue([]);
         getDisplayPictureCaptionResults.mockResolvedValue([]);
 
         const response = await GET(new Request("http://localhost/api/display/ABC123"), { params: Promise.resolve({ partyCode: "ABC123" }) });
