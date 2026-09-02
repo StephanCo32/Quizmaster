@@ -30,6 +30,14 @@ export async function startPictureCaptionSession(command: { hostId: string; part
     return result;
 }
 
+export async function startNextPictureCaptionRound(command: { hostId: string; partyId: string; commandId: string; expectedRevision: number }) {
+    const { data, error } = await createSupabaseAdminClient().rpc("start_next_picture_caption_round", { p_host_id: command.hostId, p_party_id: command.partyId, p_command_id: command.commandId, p_expected_revision: command.expectedRevision });
+    if (error) throw new Error(error.message === "round_in_progress" || error.message === "no_joined_players" || error.message === "no_pending_round" || error.message === "official_caption_required" || error.code === "40001" ? error.message : "session_start_failed", { cause: error });
+    const result = data.at(0);
+    if (!result) throw new Error("session_start_failed");
+    return result;
+}
+
 export async function setPictureCaptionPaused(command: { hostId: string; partyId: string; commandId: string; expectedRevision: number; paused: boolean }): Promise<LobbyCommandResult> {
     const { data, error } = await createSupabaseAdminClient().rpc("set_picture_caption_paused", { p_host_id: command.hostId, p_party_id: command.partyId, p_command_id: command.commandId, p_expected_revision: command.expectedRevision, p_paused: command.paused });
     if (error) throw new Error(error.code === "40001" ? "stale_revision" : "pause_failed", { cause: error });

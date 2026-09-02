@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Pencil, Radio, RefreshCw, WifiOff } from "lucide-react";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { canWriteLobby } from "@/lib/realtime/lobby-subscription";
 import { useLobbySynchronization } from "@/lib/realtime/use-lobby-synchronization";
@@ -29,6 +29,7 @@ export function PlayerLobby({
   const [nickname, setNickname] = useState(initialRoster[0]?.nickname ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const syncedRoundIdRef = useRef(initialActiveRound?.round_id ?? null);
   const member = roster[0];
   const revision = member?.session_revision ?? 0;
 
@@ -109,11 +110,32 @@ export function PlayerLobby({
         : currentRoster,
     );
     setActiveRound(projection.activeRound);
-    setCaption(projection.submission?.caption ?? "");
+    if (projection.activeRound?.round_id !== syncedRoundIdRef.current) {
+      syncedRoundIdRef.current = projection.activeRound?.round_id ?? null;
+      setCaption(projection.submission?.caption ?? "");
+    }
     setCandidates(projection.candidates);
   }
 
-  async function castBallot() { if (!canWrite || !selectedCandidateId) return; setBusy(true); setError(null); const response = await fetch(`/api/play/${partyCode}/ballot`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ commandId: crypto.randomUUID(), expectedRevision: revision, candidateId: selectedCandidateId }) }); if (!response.ok) setError("Your ballot could not be saved."); else { setSelectedCandidateId(null); await refresh(); } setBusy(false); }
+  async function castBallot() {
+    if (!canWrite || !selectedCandidateId) return;
+    setBusy(true); setError(null);
+    const response = await fetch(`/api/play/${partyCode}/ballot`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ commandId: crypto.randomUUID(), expectedRevision: revision, candidateId: selectedCandidateId }) });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null) as { error?: string } | null;
+      setError(
+        payload?.error === "not_your_turn"
+          ? "It is not your turn yet."
+          : payload?.error === "turn_expired"
+            ? "Your turn ran out. Waiting for the next turn."
+            : payload?.error === "ballot_already_cast"
+              ? "You already cast a ballot for this round."
+              : "Your ballot could not be saved.",
+      );
+      await refresh();
+    } else { setSelectedCandidateId(null); await refresh(); }
+    setBusy(false);
+  }
 
   async function submitCaption(event: React.FormEvent) {
     event.preventDefault(); if (!activeRound || !canWrite) return;
@@ -164,7 +186,7 @@ export function PlayerLobby({
           )}
           {activeRound && <section className="broadcast-panel player-card"><div><span className="rail-label">{activeRound.phase}{(activeRound.paused_remaining_seconds !== null || activeRound.turn_paused_remaining_seconds !== null) ? " paused" : ""}</span><h2>{activeRound.phase === "captioning" ? "Write a caption." : ""}</h2>{secondsRemaining !== null && <p className="round-countdown">{secondsRemaining}s</p>}</div></section>}
           {activeRound?.phase === "captioning" && <form className="broadcast-panel nickname-form" onSubmit={submitCaption}><label>Caption<textarea required maxLength={1000} rows={3} value={caption} onChange={(event) => setCaption(event.target.value)} /></label><button className="broadcast-action" type="submit" disabled={busy || !canWrite || activeRound.captioning_deadline === null}>{caption ? "Update caption" : "Submit caption"}</button></form>}
-          {activeRound?.phase === "voting" && <section className="broadcast-panel"><h2>{activeRound.is_my_turn ? "Your turn - choose a letter" : "Waiting for your turn"}</h2><div className="roster-list">{candidates.map((candidate) => <button className="roster-row" type="button" key={candidate.candidate_id} disabled={busy || !canWrite || !activeRound.is_my_turn || candidate.has_voted} aria-pressed={selectedCandidateId === candidate.candidate_id} onClick={() => setSelectedCandidateId(candidate.candidate_id)}><span className="roster-color" style={{ backgroundColor: candidate.is_own ? candidate.own_color : "transparent" }} aria-label={candidate.is_own ? "Your caption" : undefined} /><strong>{candidate.letter}</strong></button>)}</div>{activeRound.is_my_turn && !candidates[0]?.has_voted && <button className="broadcast-action" type="button" disabled={busy || !canWrite || !selectedCandidateId} onClick={() => void castBallot()}>Submit answer</button>}{candidates[0]?.has_voted && <p>Ballot submitted. Waiting for the result.</p>}</section>}
+          {activeRound?.phase === "voting" && <section className="broadcast-panel"><h2>{activeRound.is_my_turn ? "Your turn - choose a letter" : "Waiting for your turn"}</h2><div className="roster-list">{candidates.map((candidate) => <button className="roster-row roster-row-selectable" type="button" key={candidate.candidate_id} disabled={busy || !canWrite || !activeRound.is_my_turn || candidate.has_voted} aria-pressed={selectedCandidateId === candidate.candidate_id} onClick={() => setSelectedCandidateId(candidate.candidate_id)}><span className="roster-color" style={{ backgroundColor: candidate.is_own ? candidate.own_color : "transparent" }} aria-label={candidate.is_own ? "Your caption" : undefined} /><strong>{candidate.letter}</strong></button>)}</div>{activeRound.is_my_turn && !candidates[0]?.has_voted && <button className="broadcast-action" type="button" disabled={busy || !canWrite || !selectedCandidateId} onClick={() => void castBallot()}>{selectedCandidateId ? `Submit answer ${candidates.find((candidate) => candidate.candidate_id === selectedCandidateId)?.letter ?? ""}` : "Choose a letter first"}</button>}{candidates[0]?.has_voted && <p>Ballot submitted. Waiting for the result.</p>}</section>}
           {member.session_state === "finished" && <section className="broadcast-panel"><h2>Game session complete</h2><p>Scores are settled. Waiting for the Host to start the next session.</p></section>}
           {member.session_state === "lobby" && !activeRound && <section className="broadcast-panel"><h2>Intermission</h2><p>The next Game session is ready. Mark yourself ready when the Host is set.</p></section>}
           <div className="broadcast-panel player-card">

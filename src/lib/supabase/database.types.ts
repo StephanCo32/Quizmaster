@@ -78,6 +78,7 @@ export type PictureCaptionRound = {
     turn_paused_remaining_seconds: number | null;
     current_turn_nickname: string | null;
     eligible_voter_count: number;
+    awaiting_reveal: boolean;
     game_session_id: string;
     session_revision: number;
 };
@@ -138,7 +139,7 @@ export type DisplayPictureCaptionCandidate = {
 };
 export type HostPictureCaptionBallot = { candidate_id: string; caption: string; display_position: number; points: number; voter_nickname: string | null; game_session_id: string; session_revision: number };
 export type PictureCaptionResult = { caption: string; points: number; is_leader: boolean; is_official: boolean; author_nickname: string | null; author_color: string | null; game_session_id: string; session_revision: number };
-export type PictureCaptionRevealCandidate = { candidate_id: string; letter: string; caption: string; is_official: boolean | null; revealed: boolean; author_nickname: string | null; author_color: string | null; game_session_id: string; session_revision: number };
+export type PictureCaptionRevealCandidate = { candidate_id: string; letter: string; caption: string; is_official: boolean | null; revealed: boolean; author_nickname: string | null; author_color: string | null; voter_nicknames: string[] | null; voter_colors: string[] | null; game_session_id: string; session_revision: number };
 export type HostPictureCaptionRevealCandidate = Omit<PictureCaptionRevealCandidate, "is_official"> & { is_official: boolean };
 
 export type Database = {
@@ -201,6 +202,7 @@ export type Database = {
             host_picture_caption_template_catalog: { Args: { p_host_id: string; p_party_id: string }; Returns: HostPictureCaptionTemplate[] };
             mutate_picture_caption_round: { Args: { p_host_id: string; p_party_id: string; p_round_id: string | null; p_command_id: string; p_expected_revision: number; p_action: string; p_template_id: string | null; p_position: number | null; p_captioning_seconds: number | null; p_voting_seconds: number | null; p_caption_grapheme_limit: number | null }; Returns: LobbyCommandResult[] };
             start_picture_caption_session: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: (LobbyCommandResult & { round_id: string; captioning_deadline: string })[] };
+            start_next_picture_caption_round: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number }; Returns: (LobbyCommandResult & { round_id: string; captioning_deadline: string })[] };
             set_picture_caption_paused: { Args: { p_host_id: string; p_party_id: string; p_command_id: string; p_expected_revision: number; p_paused: boolean }; Returns: LobbyCommandResult[] };
             player_picture_caption_round_projection: { Args: { p_player_id: string; p_party_code: string }; Returns: ActivePictureCaptionRound[] };
             display_picture_caption_round_projection: { Args: { p_display_session_id: string; p_party_code: string }; Returns: ActivePictureCaptionRound[] };
