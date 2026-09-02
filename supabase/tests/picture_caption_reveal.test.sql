@@ -14,7 +14,7 @@ select public.add_picture_caption_round('11111111-eeee-4111-8111-111111111111',(
 select public.start_picture_caption_session('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'bbbbbbbb-eeee-4bbb-8bbb-bbbbbbbbbbbb',5);
 select public.submit_picture_caption('22222222-eeee-4222-8222-222222222222',(select code from public.parties limit 1),'cccccccc-eeee-4ccc-8ccc-cccccccccccc',6,'A caption');
 select public.close_picture_captioning('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'dddddddd-eeee-4ddd-8ddd-dddddddddddd',7,false);
-select public.cast_picture_caption_ballot('22222222-eeee-4222-8222-222222222222',(select code from public.parties limit 1),'ffffffff-eeee-4fff-8fff-ffffffffffff',8,(select id from public.picture_caption_candidates limit 1));
+select public.cast_picture_caption_ballot('22222222-eeee-4222-8222-222222222222',(select code from public.parties limit 1),'ffffffff-eeee-4fff-8fff-ffffffffffff',8,(select id from public.picture_caption_candidates where not is_official limit 1));
 insert into tap_results select lives_ok($$select * from public.start_picture_caption_reveal('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'10101010-eeee-4010-8010-101010101010',(select revision from public.game_sessions limit 1))$$,'Host starts one Reveal sequence');
 insert into tap_results select is((select phase from public.picture_caption_rounds where state='active'),'revealing','Reveal becomes the active phase');
 select public.continue_picture_caption_round('11111111-eeee-4111-8111-111111111111',(select id from public.parties limit 1),'12121212-eeee-4012-8012-121212121212',(select revision from public.game_sessions limit 1));

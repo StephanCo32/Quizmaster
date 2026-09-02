@@ -35,5 +35,5 @@ export async function POST(request: Request, context: { params: Promise<{ partyI
         });
         await publishLobbyInvalidation({ gameSessionId: result.game_session_id, revision: result.session_revision });
         return NextResponse.json({ updated: true });
-    } catch (error) { const message = error instanceof Error ? error.message : "unavailable"; return NextResponse.json({ error: message === "stale_revision" ? message : "unavailable" }, { status: message === "stale_revision" ? 409 : 503 }); }
+    } catch (error) { const message = error instanceof Error ? error.message : "unavailable"; const known = ["stale_revision", "official_caption_required"]; return NextResponse.json({ error: known.includes(message) ? message : "unavailable" }, { status: message === "stale_revision" ? 409 : message === "official_caption_required" ? 422 : 503 }); }
 }

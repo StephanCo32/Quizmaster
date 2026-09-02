@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 create temporary table tap_results (result text) on commit drop;
-insert into tap_results select plan(11);
+insert into tap_results select plan(13);
 
 insert into auth.users (id, email) values
     ('11111111-bbbb-4111-8111-111111111111', 'caption-host@example.com'),
@@ -26,7 +26,9 @@ insert into tap_results select is((select nickname from public.host_picture_capt
 insert into tap_results select lives_ok($$select * from public.remove_picture_caption_submission('11111111-bbbb-4111-8111-111111111111', (select id from public.parties limit 1), (select id from public.picture_caption_submissions limit 1), 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', (select revision from public.game_sessions limit 1))$$, 'Host can remove a caption during Captioning');
 insert into tap_results select is((select count(*) from public.picture_caption_moderation_audits), 1::bigint, 'moderation records an immutable audit');
 insert into tap_results select lives_ok($$select * from public.close_picture_captioning('11111111-bbbb-4111-8111-111111111111', (select id from public.parties limit 1), 'cdcdcdcd-bbbb-4cdc-8cdc-cdcdcdcdcdcd', (select revision from public.game_sessions limit 1), true)$$, 'Host can close Captioning with no valid captions');
-insert into tap_results select is((select state from public.picture_caption_rounds limit 1), 'completed', 'zero captions skip Voting into Results');
+insert into tap_results select is((select phase from public.picture_caption_rounds limit 1), 'voting', 'zero captions still proceed to Voting with the Official caption as the sole candidate');
+insert into tap_results select is((select count(*) from public.picture_caption_candidates where round_id=(select id from public.picture_caption_rounds limit 1)), 1::bigint, 'only the Official caption candidate exists when zero Players submitted');
+insert into tap_results select ok((select is_official from public.picture_caption_candidates where round_id=(select id from public.picture_caption_rounds limit 1) limit 1), 'the sole candidate is flagged official');
 
 insert into auth.users (id, email) values ('11111111-cccc-4111-8111-111111111111', 'voting-host@example.com'), ('22222222-cccc-4222-8222-222222222222', 'voting-player@example.com');
 select public.create_party('11111111-cccc-4111-8111-111111111111', '44444444-cccc-4444-8444-444444444444', 0);
