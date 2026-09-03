@@ -80,6 +80,12 @@ function RevealCardsPrototype() {
     setCandidates((current) => current.map((candidate) => (candidate.candidate_id === candidateId ? { ...candidate, revealed: true } : candidate)));
   }
 
+  // Mirrors the real gap between projections: Host always sees author identity; Display only
+  // gets it once revealed_at is set, everything else (caption, votes) is shared unconditionally.
+  const displayCandidates = candidates.map((candidate) =>
+    candidate.revealed ? candidate : { ...candidate, is_official: null, author_nicknames: null, author_colors: null },
+  );
+
   return (
     <main className="broadcast-shell" style={{ padding: 32, display: "grid", gap: 32 }}>
       <p style={{ color: "#bfc0cd" }}>Mock data, no live session. Host reveals broadcast to the shared Display column below.</p>
@@ -93,8 +99,8 @@ function RevealCardsPrototype() {
       </section>
       <section className="display-overview" style={{ height: "auto", background: "var(--broadcast-deep)", padding: 24 }}>
         <h2 style={{ marginBottom: 12 }}>Display view</h2>
-        <div className="display-candidate-stage" style={{ gridTemplateColumns: `repeat(${Math.max(1, Math.ceil(Math.sqrt(candidates.length)))}, minmax(0, 1fr))` }}>
-          {candidates.map((candidate) => (
+        <div className="display-candidate-stage" style={{ gridTemplateColumns: `repeat(${Math.max(1, Math.ceil(Math.sqrt(displayCandidates.length)))}, minmax(0, 1fr))` }}>
+          {displayCandidates.map((candidate) => (
             <RevealCard key={candidate.candidate_id} variant={variant} candidate={candidate} />
           ))}
         </div>

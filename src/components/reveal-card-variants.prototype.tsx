@@ -19,8 +19,12 @@ type RevealCardProps = {
   disabled?: boolean;
 };
 
+// Gating already happened upstream: Host's projection never nulls this out, Display's does
+// until the Host reveals that candidate, so the component never needs to check `revealed` itself.
 function authorLabel(candidate: PictureCaptionRevealCandidate) {
-  return candidate.is_official ? "Official" : candidate.author_nicknames?.join(", ") ?? "";
+  if (candidate.is_official) return "Official";
+  if (candidate.author_nicknames?.length) return candidate.author_nicknames.join(", ");
+  return "?";
 }
 
 function VoterDots({ candidate }: { candidate: PictureCaptionRevealCandidate }) {
@@ -89,7 +93,7 @@ export function VariantB({ candidate, onReveal, disabled }: RevealCardProps) {
 }
 
 // C: dense leaderboard row, not a card at all. Optimized for showing many candidates at once:
-// index circle, flexible caption, author pill, voter avatars stacked at the far right.
+// index circle, flexible caption, voter avatars, then the author badge pinned to the far right.
 export function VariantC({ candidate, onReveal, disabled }: RevealCardProps) {
   return (
     <button
@@ -100,10 +104,8 @@ export function VariantC({ candidate, onReveal, disabled }: RevealCardProps) {
     >
       <span className="proto-row-letter">{candidate.letter}</span>
       <span className="proto-row-caption">{candidate.caption}</span>
-      <span className="proto-row-author">
-        {candidate.revealed ? authorLabel(candidate) : "?"}
-      </span>
       <VoterDots candidate={candidate} />
+      <span className="proto-row-author">{authorLabel(candidate)}</span>
     </button>
   );
 }

@@ -1773,10 +1773,14 @@ h1 {
 
 .proto-row-author {
 	flex: 0 0 auto;
+	max-width: 45%;
+	margin-left: auto;
 	padding: 4px 10px;
 	background: var(--broadcast-deep);
 	border-radius: 999px;
 	font-size: 12px;
 	font-weight: 800;
+	text-align: right;
 	text-transform: uppercase;
+	white-space: normal;
 }
