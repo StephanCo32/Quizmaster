@@ -1575,3 +1575,208 @@ h1 {
 		transform: translate(3px, 3px);
 	}
 }
+
+/* ============================================================
+   PROTOTYPE ONLY — reveal-card-variants.prototype.tsx + PrototypeSwitcher.
+   Throwaway; delete this whole block once a variant is folded in for real.
+   ============================================================ */
+
+.proto-switcher {
+	position: fixed;
+	z-index: 200;
+	bottom: 20px;
+	left: 50%;
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 10px 16px;
+	transform: translateX(-50%);
+	color: var(--ink);
+	background: var(--acid);
+	border: 2px solid var(--ink);
+	border-radius: 999px;
+	box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.4);
+	font-family: "Courier New", monospace;
+	font-weight: 800;
+	text-transform: uppercase;
+}
+
+.proto-switcher button {
+	padding: 4px 10px;
+	color: var(--ink);
+	background: var(--paper);
+	border: 2px solid var(--ink);
+	border-radius: 999px;
+	cursor: pointer;
+}
+
+.proto-voters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.proto-flip {
+	width: 100%;
+	height: 100%;
+	min-height: 160px;
+	padding: 0;
+	background: transparent;
+	border: 0;
+	cursor: pointer;
+	perspective: 1000px;
+}
+
+.proto-flip-inner {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	min-height: 160px;
+	transition: transform 500ms;
+	transform-style: preserve-3d;
+}
+
+.proto-flip-revealed .proto-flip-inner {
+	transform: rotateY(180deg);
+}
+
+.proto-flip-face {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	padding: 20px;
+	text-align: center;
+	background: var(--broadcast-panel);
+	border: 3px solid var(--broadcast-line);
+	backface-visibility: hidden;
+}
+
+.proto-flip-back {
+	transform: rotateY(180deg);
+}
+
+.proto-flip-back p {
+	margin: 0;
+	font-size: 18px;
+}
+
+.proto-flip-letter {
+	font-family: "Courier New", monospace;
+	font-size: 48px;
+	font-weight: 800;
+	color: var(--broadcast-pink);
+}
+
+.proto-flip-letter-small {
+	font-size: 22px;
+}
+
+.proto-flip-hint {
+	color: #9a9bb0;
+	font-size: 12px;
+	text-transform: uppercase;
+}
+
+.proto-ticket {
+	display: flex;
+	align-items: stretch;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	text-align: left;
+	background: var(--broadcast-panel);
+	border: 2px solid var(--broadcast-line);
+	cursor: pointer;
+}
+
+.proto-ticket-stub {
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: 64px;
+	padding: 8px;
+	color: var(--broadcast-pink);
+	background: var(--broadcast-deep);
+	border-right: 3px dashed var(--broadcast-line);
+	font-family: "Courier New", monospace;
+	font-size: 26px;
+	font-weight: 800;
+}
+
+.proto-ticket-revealed .proto-ticket-stub {
+	border-right-style: solid;
+}
+
+.proto-ticket-body {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+	padding: 12px 14px;
+}
+
+.proto-ticket-caption {
+	margin: 0;
+	overflow: hidden;
+	font-size: 17px;
+	font-weight: 800;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+}
+
+.proto-ticket-author {
+	color: #bfc0cd;
+	font-size: 12px;
+	text-transform: uppercase;
+}
+
+.proto-row {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	gap: 12px;
+	padding: 8px 14px;
+	text-align: left;
+	background: var(--broadcast-panel);
+	border: 2px solid var(--broadcast-line);
+	cursor: pointer;
+}
+
+.proto-row-letter {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	color: var(--broadcast-pink);
+	border: 2px solid var(--broadcast-line);
+	border-radius: 50%;
+	font-family: "Courier New", monospace;
+	font-weight: 800;
+}
+
+.proto-row-caption {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.proto-row-author {
+	flex: 0 0 auto;
+	padding: 4px 10px;
+	background: var(--broadcast-deep);
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 800;
+	text-transform: uppercase;
+}
