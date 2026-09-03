@@ -1365,10 +1365,12 @@ h1 {
 
 .reveal-card-letter {
 	flex: 0 0 auto;
-	display: grid;
-	place-items: center;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	width: 44px;
 	height: 44px;
+	line-height: 1;
 	color: var(--broadcast-pink);
 	font-family: "Courier New", monospace;
 	font-size: 20px;
