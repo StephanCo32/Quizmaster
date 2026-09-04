@@ -29,6 +29,7 @@ export function PlayerLobby({
   const [nickname, setNickname] = useState(initialRoster[0]?.nickname ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [now, setNow] = useState<number | null>(null);
   const syncedRoundIdRef = useRef(initialActiveRound?.round_id ?? null);
   const member = roster[0];
   const revision = member?.session_revision ?? 0;
@@ -40,16 +41,22 @@ export function PlayerLobby({
   });
   const canWrite = canWriteLobby(connectionState);
 
-  const secondsRemaining = activeRound?.captioning_deadline
-    ? Math.max(0, Math.ceil((new Date(activeRound.captioning_deadline).getTime() - Date.now()) / 1000))
-    : activeRound?.turn_deadline
-      ? Math.max(0, Math.ceil((new Date(activeRound.turn_deadline).getTime() - Date.now()) / 1000))
-      : activeRound?.paused_remaining_seconds ?? activeRound?.turn_paused_remaining_seconds ?? null;
+  const deadline = activeRound?.captioning_deadline ?? activeRound?.turn_deadline ?? null;
+  const secondsRemaining = deadline && now !== null
+    ? Math.max(0, Math.ceil((new Date(deadline).getTime() - now) / 1000))
+    : activeRound?.paused_remaining_seconds ?? activeRound?.turn_paused_remaining_seconds ?? null;
   const refreshForCountdown = useEffectEvent(() => void refresh());
 
   useEffect(() => {
-    if (secondsRemaining === null) return;
-    const timer = window.setTimeout(refreshForCountdown, 1000);
+    if (!deadline) return;
+    const initialTimer = window.setTimeout(() => setNow(Date.now()), 0);
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => { window.clearTimeout(initialTimer); window.clearInterval(timer); };
+  }, [deadline]);
+
+  useEffect(() => {
+    if (secondsRemaining !== 0) return;
+    const timer = window.setTimeout(refreshForCountdown, 0);
     return () => window.clearTimeout(timer);
   }, [secondsRemaining]);
 
