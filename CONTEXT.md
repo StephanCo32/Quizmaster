@@ -103,7 +103,7 @@ One Player's editable text response to the picture in a picture-caption Game rou
 _Avoid_: Answer, Caption candidate
 
 **Caption candidate**:
-An anonymous voting choice during Voting: either one or more Caption submissions with the same normalized text, whose submitting Players are co-authors each earning one point per valid Ballot cast for it, or the round's Official caption, which has no author and instead earns each Player who casts a Ballot for it one point.
+An anonymous voting choice during Voting: one or more Caption submissions with the same normalized text, whose submitting Players are co-authors each earning one point per valid Ballot cast for it, merged with the round's Official caption when a submission's normalized text matches it. The round's Official caption always earns each Player who casts a Ballot for it one point, in addition to any co-author points, whether or not a submission merged into it.
 _Avoid_: Caption submission, answer
 
 **Ballot**:

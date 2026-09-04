@@ -12,7 +12,7 @@ insert into public.picture_caption_templates (id, created_by_user_id, name, pict
 select public.create_party('11111111-aaaa-4111-8111-111111111111', '44444444-aaaa-4444-8444-444444444444', 0);
 select public.open_party_lobby('11111111-aaaa-4111-8111-111111111111', (select id from public.parties limit 1), '55555555-aaaa-4555-8555-555555555555', 0);
 select public.join_party('22222222-aaaa-4222-8222-222222222222', (select code from public.parties limit 1), 'Ada', '66666666-aaaa-4666-8666-666666666666', 1);
-select public.add_picture_caption_round('11111111-aaaa-4111-8111-111111111111', (select id from public.parties limit 1), '33333333-aaaa-4333-8333-333333333333', '77777777-aaaa-4777-8777-777777777777', 2, 120, 90, 120);
+select public.add_picture_caption_round('11111111-aaaa-4111-8111-111111111111', (select id from public.parties limit 1), '33333333-aaaa-4333-8333-333333333333', '77777777-aaaa-4777-8777-777777777777', 2, 120, 90, 75);
 
 insert into tap_results select throws_ok($$select * from public.start_picture_caption_session('11111111-aaaa-4111-8111-111111111111', (select id from public.parties limit 1), '88888888-aaaa-4888-8888-888888888888', 3)$$, '40001', 'players_not_ready', 'start requires every connected Player to be ready');
 select public.set_party_member_ready('22222222-aaaa-4222-8222-222222222222', (select id from public.party_members limit 1), '99999999-aaaa-4999-8999-999999999999', true, 3);
@@ -30,7 +30,7 @@ insert into auth.users (id, email) values ('dddddddd-aaaa-4ddd-8ddd-dddddddddddd
 insert into public.content_admin_roles (user_id) values ('dddddddd-aaaa-4ddd-8ddd-dddddddddddd');
 select public.create_party('dddddddd-aaaa-4ddd-8ddd-dddddddddddd', 'eeeeeeee-aaaa-4eee-8eee-eeeeeeeeeeee', 0);
 select public.open_party_lobby('dddddddd-aaaa-4ddd-8ddd-dddddddddddd', (select id from public.parties where host_id='dddddddd-aaaa-4ddd-8ddd-dddddddddddd'), 'ffffffff-aaaa-4fff-8fff-ffffffffffff', 0);
-select public.add_picture_caption_round('dddddddd-aaaa-4ddd-8ddd-dddddddddddd', (select id from public.parties where host_id='dddddddd-aaaa-4ddd-8ddd-dddddddddddd'), '33333333-aaaa-4333-8333-333333333333', '10101010-aaaa-4010-8010-101010101010', 1, 120, 90, 120);
+select public.add_picture_caption_round('dddddddd-aaaa-4ddd-8ddd-dddddddddddd', (select id from public.parties where host_id='dddddddd-aaaa-4ddd-8ddd-dddddddddddd'), '33333333-aaaa-4333-8333-333333333333', '10101010-aaaa-4010-8010-101010101010', 1, 120, 90, 75);
 insert into tap_results select throws_ok($$select * from public.start_picture_caption_session('dddddddd-aaaa-4ddd-8ddd-dddddddddddd', (select id from public.parties where host_id='dddddddd-aaaa-4ddd-8ddd-dddddddddddd'), '20202020-aaaa-4020-8020-202020202020', 2)$$, '40001', 'no_joined_players', 'start requires at least one joined Player');
 
 insert into tap_results select * from finish();
