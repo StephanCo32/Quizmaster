@@ -13,7 +13,7 @@ select public.join_party('44444444-9999-4444-8444-444444444444',(select code fro
 select public.set_party_member_ready('22222222-9999-4222-8222-222222222222',(select id from public.party_members where player_id='22222222-9999-4222-8222-222222222222'),'a1a1a1a1-9999-4a1a-8a1a-a1a1a1a1a1a1',true,4);
 select public.set_party_member_ready('33333333-9999-4333-8333-333333333333',(select id from public.party_members where player_id='33333333-9999-4333-8333-333333333333'),'a2a2a2a2-9999-4a2a-8a2a-a2a2a2a2a2a2',true,5);
 select public.set_party_member_ready('44444444-9999-4444-8444-444444444444',(select id from public.party_members where player_id='44444444-9999-4444-8444-444444444444'),'a3a3a3a3-9999-4a3a-8a3a-a3a3a3a3a3a3',true,6);
-select public.add_picture_caption_round('11111111-9999-4111-8111-111111111111',(select id from public.parties limit 1),'55555555-9999-4555-8555-555555555555','a4a4a4a4-9999-4a4a-8a4a-a4a4a4a4a4a4',7,120,90,120);
+select public.add_picture_caption_round('11111111-9999-4111-8111-111111111111',(select id from public.parties limit 1),'55555555-9999-4555-8555-555555555555','a4a4a4a4-9999-4a4a-8a4a-a4a4a4a4a4a4',7,120,90,75);
 select public.start_picture_caption_session('11111111-9999-4111-8111-111111111111',(select id from public.parties limit 1),'a5a5a5a5-9999-4a5a-8a5a-a5a5a5a5a5a5',8);
 select public.submit_picture_caption('22222222-9999-4222-8222-222222222222',(select code from public.parties limit 1),'a6a6a6a6-9999-4a6a-8a6a-a6a6a6a6a6a6',9,'Same caption');
 select public.submit_picture_caption('33333333-9999-4333-8333-333333333333',(select code from public.parties limit 1),'a7a7a7a7-9999-4a7a-8a7a-a7a7a7a7a7a7',10,'same caption');

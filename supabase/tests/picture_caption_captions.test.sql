@@ -13,7 +13,7 @@ select public.create_party('11111111-bbbb-4111-8111-111111111111', '44444444-bbb
 select public.open_party_lobby('11111111-bbbb-4111-8111-111111111111', (select id from public.parties limit 1), '55555555-bbbb-4555-8555-555555555555', 0);
 select public.join_party('22222222-bbbb-4222-8222-222222222222', (select code from public.parties limit 1), 'Ada', '66666666-bbbb-4666-8666-666666666666', 1);
 select public.set_party_member_ready('22222222-bbbb-4222-8222-222222222222', (select id from public.party_members limit 1), '77777777-bbbb-4777-8777-777777777777', true, 2);
-select public.add_picture_caption_round('11111111-bbbb-4111-8111-111111111111', (select id from public.parties limit 1), '33333333-bbbb-4333-8333-333333333333', '88888888-bbbb-4888-8888-888888888888', 3, 120, 90, 120);
+select public.add_picture_caption_round('11111111-bbbb-4111-8111-111111111111', (select id from public.parties limit 1), '33333333-bbbb-4333-8333-333333333333', '88888888-bbbb-4888-8888-888888888888', 3, 120, 90, 75);
 select public.start_picture_caption_session('11111111-bbbb-4111-8111-111111111111', (select id from public.parties limit 1), '99999999-bbbb-4999-8999-999999999999', 4);
 
 insert into tap_results select lives_ok($$select * from public.submit_picture_caption('22222222-bbbb-4222-8222-222222222222', (select code from public.parties limit 1), 'aaaaaaaa-bbbb-4aaa-8aaa-aaaaaaaaaaaa', 5, E'  Hello\r\nworld  ')$$, 'eligible Player can submit one caption during Captioning');
@@ -35,7 +35,7 @@ select public.create_party('11111111-cccc-4111-8111-111111111111', '44444444-ccc
 select public.open_party_lobby('11111111-cccc-4111-8111-111111111111', (select id from public.parties where host_id='11111111-cccc-4111-8111-111111111111'), '55555555-cccc-4555-8555-555555555555', 0);
 select public.join_party('22222222-cccc-4222-8222-222222222222', (select code from public.parties where host_id='11111111-cccc-4111-8111-111111111111'), 'Bea', '66666666-cccc-4666-8666-666666666666', 1);
 select public.set_party_member_ready('22222222-cccc-4222-8222-222222222222', (select id from public.party_members where player_id='22222222-cccc-4222-8222-222222222222'), '77777777-cccc-4777-8777-777777777777', true, 2);
-select public.add_picture_caption_round('11111111-cccc-4111-8111-111111111111', (select id from public.parties where host_id='11111111-cccc-4111-8111-111111111111'), '33333333-bbbb-4333-8333-333333333333', '88888888-cccc-4888-8888-888888888888', 3, 120, 90, 120);
+select public.add_picture_caption_round('11111111-cccc-4111-8111-111111111111', (select id from public.parties where host_id='11111111-cccc-4111-8111-111111111111'), '33333333-bbbb-4333-8333-333333333333', '88888888-cccc-4888-8888-888888888888', 3, 120, 90, 75);
 select public.start_picture_caption_session('11111111-cccc-4111-8111-111111111111', (select id from public.parties where host_id='11111111-cccc-4111-8111-111111111111'), '99999999-cccc-4999-8999-999999999999', 4);
 select public.submit_picture_caption('22222222-cccc-4222-8222-222222222222', (select code from public.parties where host_id='11111111-cccc-4111-8111-111111111111'), 'aaaaaaaa-cccc-4aaa-8aaa-aaaaaaaaaaaa', 5, 'Only caption');
 select public.close_picture_captioning('11111111-cccc-4111-8111-111111111111', (select id from public.parties where host_id='11111111-cccc-4111-8111-111111111111'), 'bbbbbbbb-cccc-4bbb-8bbb-bbbbbbbbbbbb', 6, false);

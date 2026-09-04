@@ -6,10 +6,10 @@ import { publishLobbyInvalidation } from "@/lib/realtime/lobby-invalidation";
 
 const command = z.object({ commandId: z.string().uuid(), expectedRevision: z.number().int().nonnegative() }).strict();
 const mutation = z.discriminatedUnion("action", [
-    command.extend({ action: z.literal("add"), templateId: z.string().uuid(), captioningSeconds: z.number().int().min(5).max(600).optional(), votingSeconds: z.number().int().min(5).max(600).optional(), captionGraphemeLimit: z.number().int().min(1).max(120).optional() }).strict(),
+    command.extend({ action: z.literal("add"), templateId: z.string().uuid(), captioningSeconds: z.number().int().min(5).max(600).optional(), votingSeconds: z.number().int().min(5).max(600).optional(), captionGraphemeLimit: z.number().int().min(1).max(75).optional() }).strict(),
     command.extend({ action: z.literal("delete"), roundId: z.string().uuid() }).strict(),
     command.extend({ action: z.literal("duplicate"), roundId: z.string().uuid() }).strict(),
-    command.extend({ action: z.literal("edit"), roundId: z.string().uuid(), templateId: z.string().uuid().optional(), captioningSeconds: z.number().int().min(5).max(600).optional(), votingSeconds: z.number().int().min(5).max(600).optional(), captionGraphemeLimit: z.number().int().min(1).max(120).optional() }).strict(),
+    command.extend({ action: z.literal("edit"), roundId: z.string().uuid(), templateId: z.string().uuid().optional(), captioningSeconds: z.number().int().min(5).max(600).optional(), votingSeconds: z.number().int().min(5).max(600).optional(), captionGraphemeLimit: z.number().int().min(1).max(75).optional() }).strict(),
     command.extend({ action: z.literal("reorder"), roundId: z.string().uuid(), position: z.number().int().nonnegative() }).strict(),
 ]);
 
