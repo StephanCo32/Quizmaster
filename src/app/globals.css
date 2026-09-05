@@ -1024,8 +1024,9 @@ h1 {
 }
 
 .roster-row-selectable[aria-pressed="true"] {
-	border-color: var(--broadcast-pink);
-	background: var(--broadcast-deep);
+	border-color: var(--broadcast-line);
+	background: var(--broadcast-pink);
+	color: var(--broadcast-deep);
 }
 
 .roster-row-selectable:disabled {
