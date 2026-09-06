@@ -33,39 +33,79 @@ function isLobbyInvalidation(value: unknown): value is LobbyInvalidation {
 export function subscribeToLobby(options: LobbySubscriptionOptions) {
     let connectedOnce = false;
     let refresh: Promise<void> | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let pendingRevision: number | null = null;
+    let newestRevision = options.getRevision();
+    let disposed = false;
+
+    function setConnectionState(state: LobbyConnectionState) {
+        if (!disposed) options.onConnectionState(state);
+    }
+
+    function scheduleRefresh() {
+        if (disposed || timer !== null || refresh) return;
+        timer = setTimeout(() => {
+            timer = null;
+            if (pendingRevision === null || pendingRevision <= options.getRevision()) {
+                pendingRevision = null;
+                return;
+            }
+            void refetch().catch(() => setConnectionState("disconnected"));
+        }, 500 + Math.floor(Math.random() * 100));
+    }
 
     function refetch() {
-        if (!refresh) refresh = options.refetch().finally(() => { refresh = null; });
+        if (!refresh) {
+            if (timer !== null) clearTimeout(timer);
+            timer = null;
+            pendingRevision = null;
+            refresh = Promise.resolve().then(() => options.refetch()).catch((error) => {
+                pendingRevision = null;
+                throw error;
+            }).finally(() => {
+                refresh = null;
+                if (pendingRevision !== null) scheduleRefresh();
+            });
+        }
         return refresh;
     }
 
     const channel = options.client
         .channel(lobbyChannel(options.gameSessionId))
         .on("broadcast", { event: lobbyInvalidationEvent }, (message) => {
+            if (disposed) return;
             if (!isLobbyInvalidation(message.payload)) return;
-            if (message.payload.gameSessionId !== options.gameSessionId || message.payload.revision <= options.getRevision()) return;
-            void refetch().catch(() => options.onConnectionState("disconnected"));
+            if (message.payload.gameSessionId !== options.gameSessionId || message.payload.revision <= Math.max(options.getRevision(), newestRevision)) return;
+            newestRevision = message.payload.revision;
+            pendingRevision = message.payload.revision;
+            scheduleRefresh();
         })
         .subscribe((status) => {
+            if (disposed) return;
             if (status === "SUBSCRIBED") {
                 if (!connectedOnce) {
                     connectedOnce = true;
-                    options.onConnectionState("connected");
+                    setConnectionState("connected");
                     return;
                 }
 
-                options.onConnectionState("reconnecting");
+                setConnectionState("reconnecting");
                 void refetch().then(
-                    () => options.onConnectionState("connected"),
-                    () => options.onConnectionState("disconnected"),
+                    () => setConnectionState("connected"),
+                    () => setConnectionState("disconnected"),
                 );
                 return;
             }
 
             if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-                options.onConnectionState("disconnected");
+                setConnectionState("disconnected");
             }
         });
 
-    return () => options.client.removeChannel(channel);
+    return () => {
+        disposed = true;
+        if (timer !== null) clearTimeout(timer);
+        pendingRevision = null;
+        return options.client.removeChannel(channel);
+    };
 }

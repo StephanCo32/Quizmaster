@@ -50,7 +50,8 @@ export async function getDisplayPictureCaptionRound(displaySessionId: string, pa
     const { data, error } = await client.rpc("display_picture_caption_round_projection", { p_display_session_id: displaySessionId, p_party_code: partyCode });
     if (error) throw new Error("display_projection_unavailable", { cause: error });
     let round = data.at(0) ?? null;
-    if (round?.phase === "captioning" || round?.phase === "voting") {
+    const deadline = round?.phase === "captioning" ? round.captioning_deadline : round?.phase === "voting" ? round.turn_deadline : null;
+    if (round && deadline && Date.parse(deadline) <= Date.now()) {
         const { error: deadlineError } = await client.rpc("resolve_picture_caption_deadline", { p_game_session_id: round.game_session_id });
         if (deadlineError) throw new Error("display_projection_unavailable", { cause: deadlineError });
         const { data: resolved, error: resolvedError } = await client.rpc("display_picture_caption_round_projection", { p_display_session_id: displaySessionId, p_party_code: partyCode });
